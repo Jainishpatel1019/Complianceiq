@@ -237,6 +237,165 @@ async def search_regulations(
     return results
 
 
+@router.get("/{regulation_id}/diff")
+async def get_regulation_diff(
+    regulation_id: str,
+    db: AsyncSession = Depends(get_db_session),
+) -> dict:
+    """Compute sentence-level text diff between v1 and v2 of a regulation.
+
+    Uses Python difflib SequenceMatcher to identify added, removed, and
+    changed sentences. Returns structured spans with before/after text,
+    section context, and a plain-English summary of the impact.
+
+    This is the endpoint that powers the "Proof: What Changed" panel in
+    the Alerts page — every alert must be backed by actual text evidence.
+
+    Args:
+        regulation_id: UUID string.
+        db: Injected DB session.
+
+    Returns:
+        Dict with regulation metadata, list of changed spans, and summary.
+
+    Raises:
+        HTTPException 404 if regulation not found.
+        HTTPException 422 if < 2 versions exist.
+    """
+    import difflib
+    import re
+    from db.models import RegulationVersion
+
+    try:
+        reg_uuid = uuid.UUID(regulation_id)
+    except ValueError:
+        raise HTTPException(status_code=422, detail="Invalid regulation ID")
+
+    # Fetch regulation (including v1 stored in raw_metadata for demo)
+    result = await db.execute(select(Regulation).where(Regulation.id == reg_uuid))
+    regulation = result.scalar_one_or_none()
+    if not regulation:
+        raise HTTPException(status_code=404, detail="Regulation not found")
+
+    # Fetch two most recent versions
+    ver_result = await db.execute(
+        select(RegulationVersion)
+        .where(RegulationVersion.regulation_id == reg_uuid)
+        .order_by(RegulationVersion.version_number)
+        .limit(2)
+    )
+    versions = ver_result.scalars().all()
+
+    if len(versions) < 2:
+        raise HTTPException(status_code=422, detail="Need at least 2 versions for diff")
+
+    text_v1 = versions[0].full_text or ""
+    text_v2 = versions[1].full_text or ""
+
+    # ── Sentence-level diff ───────────────────────────────────────────────────
+    def split_sentences(text: str) -> list[str]:
+        """Split regulatory text into meaningful sentence-level units."""
+        # Split on sentence boundaries, preserve section headers
+        units = re.split(r'(?<=[.;])\s+(?=[A-Z(])|(?=\n(?:Section|SECTION|\(a\)|\(b\)|\(c\)))', text)
+        return [u.strip() for u in units if u.strip() and len(u.strip()) > 20]
+
+    sentences_v1 = split_sentences(text_v1)
+    sentences_v2 = split_sentences(text_v2)
+
+    matcher = difflib.SequenceMatcher(None, sentences_v1, sentences_v2, autojunk=False)
+    opcodes = matcher.get_opcodes()
+
+    changes = []
+    stats = {"added": 0, "removed": 0, "changed": 0, "unchanged": 0}
+
+    for tag, i1, i2, j1, j2 in opcodes:
+        if tag == "equal":
+            stats["unchanged"] += (i2 - i1)
+            continue
+
+        block_old = " ".join(sentences_v1[i1:i2]).strip()
+        block_new = " ".join(sentences_v2[j1:j2]).strip()
+
+        if tag == "replace":
+            change_type = "changed"
+            stats["changed"] += 1
+        elif tag == "insert":
+            change_type = "added"
+            stats["added"] += 1
+        elif tag == "delete":
+            change_type = "removed"
+            stats["removed"] += 1
+        else:
+            continue
+
+        # Compute significance of this specific change
+        word_change_count = abs(len(block_new.split()) - len(block_old.split()))
+        significance = "high" if word_change_count > 30 else "medium" if word_change_count > 10 else "low"
+
+        # Detect numeric changes (percentages, dollar amounts, days)
+        nums_old = re.findall(r'\d+(?:\.\d+)?(?:\s*(?:percent|%|\$|billion|million|days|years))?', block_old, re.I)
+        nums_new = re.findall(r'\d+(?:\.\d+)?(?:\s*(?:percent|%|\$|billion|million|days))?', block_new, re.I)
+        has_numeric_change = nums_old != nums_new and (nums_old or nums_new)
+
+        if has_numeric_change:
+            significance = "high"
+
+        changes.append({
+            "type": change_type,
+            "old_text": block_old[:600] if block_old else None,
+            "new_text": block_new[:600] if block_new else None,
+            "significance": significance,
+            "has_numeric_change": has_numeric_change,
+            "numbers_before": nums_old[:5] if nums_old else [],
+            "numbers_after": nums_new[:5] if nums_new else [],
+        })
+
+    # Sort: high-significance first
+    sig_order = {"high": 0, "medium": 1, "low": 2}
+    changes.sort(key=lambda c: (sig_order.get(c["significance"], 9), c["type"] != "changed"))
+
+    # ── Plain-English summary from stored metadata ───────────────────────────
+    plain_english = (regulation.raw_metadata or {}).get("plain_english", "")
+
+    # ── Change summary sentence ───────────────────────────────────────────────
+    total_changed = stats["added"] + stats["removed"] + stats["changed"]
+    total_sentences = len(sentences_v1) + len(sentences_v2)
+    pct_changed = round(total_changed / max(total_sentences / 2, 1) * 100, 1)
+
+    change_summary = (
+        f"This amendment modifies {total_changed} text block(s) "
+        f"({pct_changed}% of the document). "
+        f"{stats['changed']} section(s) revised, "
+        f"{stats['added']} section(s) added, "
+        f"{stats['removed']} section(s) removed."
+    )
+
+    high_significance = [c for c in changes if c["significance"] == "high"]
+    if high_significance and high_significance[0].get("numbers_before") and high_significance[0].get("numbers_after"):
+        c = high_significance[0]
+        change_summary += (
+            f" Most significant: a numeric requirement changed "
+            f"from {c['numbers_before'][0]} to {c['numbers_after'][0]}."
+        )
+
+    return {
+        "regulation_id": regulation_id,
+        "document_number": regulation.document_number,
+        "title": regulation.title,
+        "agency": regulation.agency,
+        "version_old": versions[0].version_number,
+        "version_new": versions[1].version_number,
+        "word_count_v1": versions[0].word_count or 0,
+        "word_count_v2": versions[1].word_count or 0,
+        "word_count_delta": (versions[1].word_count or 0) - (versions[0].word_count or 0),
+        "stats": stats,
+        "pct_changed": pct_changed,
+        "change_summary": change_summary,
+        "plain_english": plain_english,
+        "changes": changes[:25],  # cap at 25 for response size
+    }
+
+
 @router.get("/{regulation_id}", response_model=RegulationSchema)
 async def get_regulation(
     regulation_id: str,

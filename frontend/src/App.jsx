@@ -4,14 +4,13 @@ import RegulatoryFeed from './pages/RegulatoryFeed'
 import Reports from './pages/Reports'
 import Causal from './pages/Causal'
 import Graph from './pages/Graph'
-import Alerts from './pages/Alerts'
 
 const NAV = [
   { to: '/',        label: 'Regulatory Feed',  icon: Activity },
   { to: '/reports', label: 'Impact Reports',   icon: BarChart2 },
   { to: '/causal',  label: 'Causal Analysis',  icon: FlaskConical },
   { to: '/graph',   label: 'Knowledge Graph',  icon: Network },
-  { to: '/alerts',  label: 'Alerts',           icon: AlertTriangle },
+  { to: '/alerts',  label: 'Alerts',           icon: AlertTriangle, soon: true },
 ]
 
 export default function App() {
@@ -68,7 +67,6 @@ export default function App() {
           <Route path="/reports" element={<Reports />} />
           <Route path="/causal"  element={<Causal />} />
           <Route path="/graph"   element={<Graph />} />
-          <Route path="/alerts"  element={<Alerts />} />
         </Routes>
       </main>
     </div>
