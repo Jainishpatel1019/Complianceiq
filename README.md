@@ -1,3 +1,13 @@
+---
+title: ComplianceIQ
+emoji: 🏦
+colorFrom: blue
+colorTo: indigo
+sdk: docker
+app_port: 7860
+pinned: false
+---
+
 # ComplianceIQ
 
 Automated regulatory intelligence for banking compliance teams. Detects changes in US federal banking regulations, quantifies their financial impact using causal inference, and surfaces the results through an interactive dashboard.
