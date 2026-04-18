@@ -1,167 +1,108 @@
-# ComplianceIQ — Full local development environment
-# 11 services: all run with 'make dev'
-# Why CeleryExecutor for Airflow: scales to parallel DAG runs without
-# requiring Kubernetes. Redis is already in the stack for ChromaDB caching.
-
-x-airflow-common: &airflow-common
-  image: apache/airflow:2.9.3-python3.11
-  environment: &airflow-env
-    AIRFLOW__CORE__EXECUTOR: CeleryExecutor
-    AIRFLOW__CORE__SQL_ALCHEMY_CONN: postgresql+psycopg2://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres/${POSTGRES_DB}
-    AIRFLOW__CELERY__RESULT_BACKEND: db+postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres/${POSTGRES_DB}
-    AIRFLOW__CELERY__BROKER_URL: redis://redis:6379/0
-    AIRFLOW__CORE__FERNET_KEY: ${AIRFLOW__CORE__FERNET_KEY}
-    AIRFLOW__CORE__LOAD_EXAMPLES: "false"
-    AIRFLOW__WEBSERVER__SECRET_KEY: ${AIRFLOW__WEBSERVER__SECRET_KEY}
-    AIRFLOW__LOGGING__LOGGING_LEVEL: INFO
-    # Pass all app env vars into Airflow workers so DAGs can reach services
-    POSTGRES_HOST: postgres
-    POSTGRES_PORT: ${POSTGRES_PORT}
-    POSTGRES_DB: ${POSTGRES_DB}
-    POSTGRES_USER: ${POSTGRES_USER}
-    POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-    OLLAMA_BASE_URL: ${OLLAMA_BASE_URL}
-    CHROMADB_HOST: ${CHROMADB_HOST}
-    CHROMADB_PORT: ${CHROMADB_PORT}
-    FEDERAL_REGISTER_BASE_URL: ${FEDERAL_REGISTER_BASE_URL}
-    FDIC_BANKFIND_BASE_URL: ${FDIC_BANKFIND_BASE_URL}
-    MLFLOW_TRACKING_URI: ${MLFLOW_TRACKING_URI}
-  volumes:
-    - ./airflow/dags:/opt/airflow/dags
-    - ./backend:/opt/airflow/backend        # DAGs import from backend/
-    - airflow_logs:/opt/airflow/logs
-    - airflow_plugins:/opt/airflow/plugins
-  depends_on:
-    postgres:
-      condition: service_healthy
-    redis:
-      condition: service_healthy
+# ComplianceIQ — Hugging Face Spaces deployment
+#
+# THIS FILE is used by HuggingFace Spaces (must be named docker-compose.yml).
+# For local full-stack development use: docker compose -f docker-compose.dev.yml up
+#
+# Slimmed to 5 services (16GB RAM, 2 vCPU free tier).
+# Removed: airflow-webserver, airflow-scheduler, airflow-worker, redis, mlflow, flower.
+# Pipelines run locally; HF Space serves pre-seeded data for the live demo.
+#
+# Startup order:
+#   postgres → chromadb → ollama → api → frontend
+#
+# HF Secrets required (set in Space settings):
+#   POSTGRES_USER, POSTGRES_PASSWORD, POSTGRES_DB
+#   API_SECRET_KEY
+#   OLLAMA_BASE_URL (set to http://ollama:11434)
+#   CHROMADB_HOST   (set to chromadb)
+#   CHROMADB_PORT   (set to 8000)
 
 services:
   # ── 1. PostgreSQL + TimescaleDB ─────────────────────────────────────────────
-  # Why TimescaleDB: time-series queries on regulatory change scores are 10-100x
-  # faster with hypertables than with standard PostgreSQL btree indexes.
+  # Loads seed dump from data/seed/complianceiq_seed.sql.gz on first start.
+  # Seed covers Jan 2024 - Jun 2024 Federal Register + FDIC data (≈ 12 000 rows).
   postgres:
     image: timescale/timescaledb:latest-pg16
     environment:
-      POSTGRES_DB: ${POSTGRES_DB}
-      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_DB: ${POSTGRES_DB:-complianceiq}
+      POSTGRES_USER: ${POSTGRES_USER:-complianceiq}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     volumes:
       - postgres_data:/var/lib/postgresql/data
-    ports:
-      - "5432:5432"
+      - ./data/seed/init:/docker-entrypoint-initdb.d:ro
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-complianceiq} -d ${POSTGRES_DB:-complianceiq}"]
       interval: 10s
       timeout: 5s
-      retries: 5
+      retries: 10
+    restart: unless-stopped
+    # No ports exposed externally — api talks to postgres on the Docker network
 
-  # ── 2. Redis ────────────────────────────────────────────────────────────────
-  # Why Redis: Celery requires a message broker. Redis is lighter than RabbitMQ
-  # and doubles as Airflow's result backend.
-  redis:
-    image: redis:7-alpine
-    volumes:
-      - redis_data:/data
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
-  # ── 3. ChromaDB ─────────────────────────────────────────────────────────────
-  # Why ChromaDB over Pinecone/Weaviate: fully local (no API cost), persistent
-  # storage, and native Python client. Hybrid search via pgvector handles
-  # production queries; ChromaDB is the dev-speed vector store.
+  # ── 2. ChromaDB ─────────────────────────────────────────────────────────────
+  # Pre-built index loaded from data/seed/chromadb_snapshot/ via volume mount.
   chromadb:
     image: chromadb/chroma:latest
     environment:
       IS_PERSISTENT: "TRUE"
       ANONYMIZED_TELEMETRY: "FALSE"
     volumes:
-      - chromadb_data:/chroma/chroma
-    ports:
-      - "8000:8000"
+      - ./data/seed/chromadb_snapshot:/chroma/chroma:ro
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:8000/api/v1/heartbeat || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
 
-  # ── 4. Ollama ───────────────────────────────────────────────────────────────
-  # Why Ollama: zero API cost forever. Three models serve three distinct jobs —
-  # mistral:7b for multi-step reasoning, nomic-embed-text for RAG embeddings
-  # (768-dim, outperforms OpenAI ada-002 on regulatory text), llama3.2:3b for
-  # fast classification where latency matters more than depth.
+  # ── 3. Ollama ───────────────────────────────────────────────────────────────
+  # mistral:7b pre-pulled during HF Space Docker build (see Dockerfile.hf).
+  # CPU inference only — 16GB RAM is sufficient for mistral:7b at batch=1.
   ollama:
     image: ollama/ollama:latest
     volumes:
       - ollama_models:/root/.ollama
-    ports:
-      - "11434:11434"
-    # CPU-only (no GPU). For GPU passthrough add:
-    # deploy:
-    #   resources:
-    #     reservations:
-    #       devices:
-    #         - driver: nvidia
-    #           count: 1
-    #           capabilities: [gpu]
-
-  # ── 5. Airflow Webserver ────────────────────────────────────────────────────
-  airflow-webserver:
-    <<: *airflow-common
-    command: webserver
-    ports:
-      - "8080:8080"
     healthcheck:
-      test: ["CMD", "curl", "--fail", "http://localhost:8080/health"]
-      interval: 30s
+      test: ["CMD-SHELL", "curl -sf http://localhost:11434/api/tags || exit 1"]
+      interval: 20s
       timeout: 10s
       retries: 5
+    restart: unless-stopped
 
-  # ── 6. Airflow Scheduler ────────────────────────────────────────────────────
-  airflow-scheduler:
-    <<: *airflow-common
-    command: scheduler
-    healthcheck:
-      test: ["CMD-SHELL", "airflow jobs check --job-type SchedulerJob --hostname \"$${HOSTNAME}\""]
-      interval: 30s
-      timeout: 10s
-      retries: 5
-
-  # ── 7. Airflow Celery Worker ────────────────────────────────────────────────
-  airflow-worker:
-    <<: *airflow-common
-    command: celery worker
-    environment:
-      <<: *airflow-env
-      DUMB_INIT_SETSID: "0"
-
-  # ── 8. FastAPI Backend ──────────────────────────────────────────────────────
+  # ── 4. FastAPI Backend ──────────────────────────────────────────────────────
   api:
     build:
       context: .
       dockerfile: Dockerfile.api
     environment:
       POSTGRES_HOST: postgres
-      POSTGRES_PORT: ${POSTGRES_PORT}
-      POSTGRES_DB: ${POSTGRES_DB}
-      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PORT: 5432
+      POSTGRES_DB: ${POSTGRES_DB:-complianceiq}
+      POSTGRES_USER: ${POSTGRES_USER:-complianceiq}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      CHROMADB_HOST: ${CHROMADB_HOST}
-      CHROMADB_PORT: ${CHROMADB_PORT}
-      OLLAMA_BASE_URL: ${OLLAMA_BASE_URL}
+      CHROMADB_HOST: chromadb
+      CHROMADB_PORT: 8000
+      OLLAMA_BASE_URL: http://ollama:11434
       API_SECRET_KEY: ${API_SECRET_KEY}
-      MLFLOW_TRACKING_URI: ${MLFLOW_TRACKING_URI}
-    volumes:
-      - ./api:/app/api
-      - ./backend:/app/backend
-      - ./db:/app/db
-    ports:
-      - "8081:8080"
+      MLFLOW_TRACKING_URI: ""          # MLflow not deployed on HF — disabled
+      DEMO_MODE: "true"                # Disables write endpoints (ingestion/DAG triggers)
     depends_on:
       postgres:
         condition: service_healthy
-    command: uvicorn api.main:app --host 0.0.0.0 --port 8080 --reload
+      chromadb:
+        condition: service_healthy
+      ollama:
+        condition: service_healthy
+    ports:
+      - "7860:8080"    # HF Spaces exposes port 7860
+    command: uvicorn api.main:app --host 0.0.0.0 --port 8080 --workers 2
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:8080/health || exit 1"]
+      interval: 20s
+      timeout: 5s
+      retries: 5
 
-  # ── 9. Frontend (nginx serving pre-built React) ─────────────────────────────
+  # ── 5. Frontend (nginx serving pre-built React) ─────────────────────────────
   frontend:
     image: nginx:alpine
     volumes:
@@ -170,40 +111,10 @@ services:
     ports:
       - "3000:80"
     depends_on:
-      - api
-
-  # ── 10. MLflow ──────────────────────────────────────────────────────────────
-  # Why MLflow: tracks every model version, hyperparameter, and evaluation score.
-  # The model_registry.py DAG auto-promotes models that beat the F1 threshold.
-  mlflow:
-    image: ghcr.io/mlflow/mlflow:v2.13.0
-    command: >
-      mlflow server
-      --backend-store-uri postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres/${POSTGRES_DB}
-      --default-artifact-root /mlruns
-      --host 0.0.0.0
-    volumes:
-      - mlflow_artifacts:/mlruns
-    ports:
-      - "5000:5000"
-    depends_on:
-      postgres:
+      api:
         condition: service_healthy
-
-  # ── 11. Flower (Celery monitoring) ──────────────────────────────────────────
-  flower:
-    <<: *airflow-common
-    command: celery flower
-    ports:
-      - "5555:5555"
-    depends_on:
-      - redis
+    restart: unless-stopped
 
 volumes:
   postgres_data:
-  redis_data:
-  chromadb_data:
   ollama_models:
-  airflow_logs:
-  airflow_plugins:
-  mlflow_artifacts:
