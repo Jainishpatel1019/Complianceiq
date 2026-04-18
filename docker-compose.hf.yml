@@ -1,0 +1,117 @@
+# ComplianceIQ — Hugging Face Spaces deployment
+#
+# Slimmed to 5 services (16GB RAM, 2 vCPU free tier).
+# Removed: airflow-webserver, airflow-scheduler, airflow-worker, redis, mlflow, flower.
+# Pipelines run locally; HF Space serves pre-seeded data for the live demo.
+#
+# Startup order:
+#   postgres → chromadb → ollama → api → frontend
+#
+# HF Secrets required (set in Space settings):
+#   POSTGRES_USER, POSTGRES_PASSWORD, POSTGRES_DB
+#   API_SECRET_KEY
+#   OLLAMA_BASE_URL (set to http://ollama:11434)
+#   CHROMADB_HOST   (set to chromadb)
+#   CHROMADB_PORT   (set to 8000)
+
+services:
+  # ── 1. PostgreSQL + TimescaleDB ─────────────────────────────────────────────
+  # Loads seed dump from data/seed/complianceiq_seed.sql.gz on first start.
+  # Seed covers Jan 2024 - Jun 2024 Federal Register + FDIC data (≈ 12 000 rows).
+  postgres:
+    image: timescale/timescaledb:latest-pg16
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-complianceiq}
+      POSTGRES_USER: ${POSTGRES_USER:-complianceiq}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./data/seed/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-complianceiq} -d ${POSTGRES_DB:-complianceiq}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+    # No ports exposed externally — api talks to postgres on the Docker network
+
+  # ── 2. ChromaDB ─────────────────────────────────────────────────────────────
+  # Pre-built index loaded from data/seed/chromadb_snapshot/ via volume mount.
+  chromadb:
+    image: chromadb/chroma:latest
+    environment:
+      IS_PERSISTENT: "TRUE"
+      ANONYMIZED_TELEMETRY: "FALSE"
+    volumes:
+      - ./data/seed/chromadb_snapshot:/chroma/chroma:ro
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:8000/api/v1/heartbeat || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  # ── 3. Ollama ───────────────────────────────────────────────────────────────
+  # mistral:7b pre-pulled during HF Space Docker build (see Dockerfile.hf).
+  # CPU inference only — 16GB RAM is sufficient for mistral:7b at batch=1.
+  ollama:
+    image: ollama/ollama:latest
+    volumes:
+      - ollama_models:/root/.ollama
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:11434/api/tags || exit 1"]
+      interval: 20s
+      timeout: 10s
+      retries: 5
+    restart: unless-stopped
+
+  # ── 4. FastAPI Backend ──────────────────────────────────────────────────────
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile.api
+    environment:
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_DB: ${POSTGRES_DB:-complianceiq}
+      POSTGRES_USER: ${POSTGRES_USER:-complianceiq}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      CHROMADB_HOST: chromadb
+      CHROMADB_PORT: 8000
+      OLLAMA_BASE_URL: http://ollama:11434
+      API_SECRET_KEY: ${API_SECRET_KEY}
+      MLFLOW_TRACKING_URI: ""          # MLflow not deployed on HF — disabled
+      DEMO_MODE: "true"                # Disables write endpoints (ingestion/DAG triggers)
+    depends_on:
+      postgres:
+        condition: service_healthy
+      chromadb:
+        condition: service_healthy
+      ollama:
+        condition: service_healthy
+    ports:
+      - "7860:8080"    # HF Spaces exposes port 7860
+    command: uvicorn api.main:app --host 0.0.0.0 --port 8080 --workers 2
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:8080/health || exit 1"]
+      interval: 20s
+      timeout: 5s
+      retries: 5
+
+  # ── 5. Frontend (nginx serving pre-built React) ─────────────────────────────
+  frontend:
+    image: nginx:alpine
+    volumes:
+      - ./frontend/dist:/usr/share/nginx/html:ro
+      - ./frontend/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    ports:
+      - "3000:80"
+    depends_on:
+      api:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+  ollama_models:

@@ -1,0 +1,23 @@
+FROM python:3.11-slim
+
+WORKDIR /app
+
+# Install system deps needed by psycopg2, torch-geometric
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    gcc g++ libpq-dev curl \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY pyproject.toml .
+# Install all deps, then force SQLAlchemy 2.0+ — apache-airflow's pip resolver
+# can downgrade SQLAlchemy to 1.4.x which breaks DeclarativeBase and Mapped.
+# The API container doesn't run Airflow; it only imports the DAG models.
+RUN pip install --no-cache-dir -e ".[dev]" && \
+    pip install --no-cache-dir --upgrade "sqlalchemy>=2.0,<3" "alembic>=1.13"
+
+COPY . .
+
+ENV PYTHONPATH=/app
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
+
+EXPOSE 8080
