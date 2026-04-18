@@ -105,17 +105,23 @@ app.include_router(causal.router, prefix="/api/v1/causal", tags=["causal"])
 app.include_router(graph.router,  prefix="/api/v1/graph",  tags=["graph"])
 app.include_router(ws_router, prefix="/ws", tags=["websockets"])
 
-# ── Root redirect + static frontend ──────────────────────────────────────────
-# If the built React app exists (frontend/dist), serve it at /app so the full
-# UI is available in the HF Space. Root / redirects to /docs as a fallback.
+# ── Static files ──────────────────────────────────────────────────────────────
+# 1. Landing page dashboard (api/static/) — always present in the image
+_static_dir = os.path.join(os.path.dirname(__file__), "static")
+if os.path.isdir(_static_dir):
+    app.mount("/static", StaticFiles(directory=_static_dir), name="static")
+
+# 2. React frontend dist (frontend/dist/) — present if built during Docker build
 _frontend_dist = os.path.join(os.path.dirname(__file__), "..", "frontend", "dist")
 if os.path.isdir(_frontend_dist):
     app.mount("/app", StaticFiles(directory=_frontend_dist, html=True), name="frontend")
 
 
 @app.get("/", include_in_schema=False)
-async def root() -> RedirectResponse:
-    """Redirect / to the interactive API docs (or frontend if available)."""
-    if os.path.isdir(_frontend_dist):
-        return RedirectResponse(url="/app")
+async def root():
+    """Serve the landing page dashboard."""
+    from fastapi.responses import FileResponse
+    landing = os.path.join(_static_dir, "index.html")
+    if os.path.isfile(landing):
+        return FileResponse(landing, media_type="text/html")
     return RedirectResponse(url="/docs")

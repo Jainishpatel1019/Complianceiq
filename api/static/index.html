@@ -1,0 +1,558 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ComplianceIQ — Regulatory Intelligence Platform</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --blue:   #2563eb;
+      --indigo: #4f46e5;
+      --green:  #16a34a;
+      --amber:  #d97706;
+      --red:    #dc2626;
+      --slate:  #0f172a;
+      --card:   #1e293b;
+      --border: #334155;
+      --text:   #e2e8f0;
+      --muted:  #94a3b8;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: var(--slate);
+      color: var(--text);
+      line-height: 1.6;
+    }
+
+    /* ── Nav ─────────────────────────────────────────────── */
+    nav {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 1rem 2rem;
+      border-bottom: 1px solid var(--border);
+      background: rgba(15,23,42,0.95);
+      position: sticky; top: 0; z-index: 100;
+      backdrop-filter: blur(8px);
+    }
+    .logo { font-size: 1.25rem; font-weight: 700; color: #fff; }
+    .logo span { color: #60a5fa; }
+    nav a {
+      color: var(--muted); text-decoration: none; font-size: 0.9rem;
+      margin-left: 1.5rem; transition: color .2s;
+    }
+    nav a:hover { color: #fff; }
+    .api-btn {
+      background: var(--blue); color: #fff !important;
+      padding: .4rem 1rem; border-radius: 6px; font-weight: 600;
+    }
+    .api-btn:hover { background: #1d4ed8 !important; }
+
+    /* ── Hero ────────────────────────────────────────────── */
+    .hero {
+      text-align: center;
+      padding: 5rem 2rem 3rem;
+      background: radial-gradient(ellipse at 50% 0%, rgba(79,70,229,.25) 0%, transparent 70%);
+    }
+    .badge {
+      display: inline-block;
+      background: rgba(79,70,229,.2);
+      color: #a5b4fc;
+      border: 1px solid rgba(79,70,229,.4);
+      border-radius: 999px;
+      padding: .25rem .9rem;
+      font-size: .8rem;
+      font-weight: 600;
+      letter-spacing: .05em;
+      margin-bottom: 1.5rem;
+    }
+    .hero h1 {
+      font-size: clamp(2rem, 5vw, 3.5rem);
+      font-weight: 800;
+      line-height: 1.15;
+      margin-bottom: 1.25rem;
+      background: linear-gradient(135deg, #fff 40%, #93c5fd);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .hero p {
+      max-width: 640px; margin: 0 auto 2.5rem;
+      font-size: 1.15rem; color: var(--muted);
+    }
+    .hero-btns { display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap; }
+    .btn-primary {
+      background: var(--indigo); color: #fff;
+      padding: .75rem 1.75rem; border-radius: 8px;
+      font-weight: 600; text-decoration: none; font-size: 1rem;
+      transition: background .2s;
+    }
+    .btn-primary:hover { background: #4338ca; }
+    .btn-secondary {
+      background: var(--card); color: var(--text);
+      padding: .75rem 1.75rem; border-radius: 8px;
+      font-weight: 600; text-decoration: none; font-size: 1rem;
+      border: 1px solid var(--border);
+      transition: background .2s;
+    }
+    .btn-secondary:hover { background: #2d3f55; }
+
+    /* ── Stats strip ─────────────────────────────────────── */
+    .stats {
+      display: flex; justify-content: center; flex-wrap: wrap; gap: 2rem;
+      padding: 2rem;
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+    }
+    .stat { text-align: center; }
+    .stat-value { font-size: 2rem; font-weight: 800; color: #60a5fa; }
+    .stat-label { font-size: .85rem; color: var(--muted); margin-top: .25rem; }
+
+    /* ── Section layout ──────────────────────────────────── */
+    section { padding: 3rem 2rem; max-width: 1200px; margin: 0 auto; }
+    h2 { font-size: 1.6rem; font-weight: 700; margin-bottom: .5rem; }
+    .section-sub { color: var(--muted); font-size: 1rem; margin-bottom: 2rem; }
+
+    /* ── How it works ────────────────────────────────────── */
+    .steps {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 1.5rem;
+    }
+    .step {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.5rem;
+    }
+    .step-icon {
+      font-size: 2rem; margin-bottom: .75rem;
+    }
+    .step h3 { font-size: 1rem; font-weight: 700; margin-bottom: .5rem; }
+    .step p { font-size: .9rem; color: var(--muted); }
+
+    /* ── Live feed ───────────────────────────────────────── */
+    .filters {
+      display: flex; gap: .75rem; flex-wrap: wrap; margin-bottom: 1.5rem;
+    }
+    .filter-btn {
+      background: var(--card);
+      border: 1px solid var(--border);
+      color: var(--muted);
+      padding: .4rem .9rem;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: .85rem;
+      transition: all .2s;
+    }
+    .filter-btn.active, .filter-btn:hover {
+      background: var(--indigo);
+      border-color: var(--indigo);
+      color: #fff;
+    }
+    .reg-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+      gap: 1.25rem;
+    }
+    .reg-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.25rem;
+      transition: border-color .2s, transform .2s;
+      cursor: default;
+    }
+    .reg-card:hover { border-color: #4f46e5; transform: translateY(-2px); }
+    .reg-card.high-risk { border-left: 3px solid var(--red); }
+    .reg-card.medium-risk { border-left: 3px solid var(--amber); }
+    .reg-card.low-risk { border-left: 3px solid var(--green); }
+
+    .card-header {
+      display: flex; align-items: flex-start;
+      justify-content: space-between; gap: .75rem; margin-bottom: .75rem;
+    }
+    .card-title {
+      font-weight: 600; font-size: .95rem; line-height: 1.4;
+      flex: 1;
+    }
+    .risk-badge {
+      flex-shrink: 0;
+      padding: .2rem .6rem;
+      border-radius: 999px;
+      font-size: .75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .05em;
+    }
+    .risk-high { background: rgba(220,38,38,.15); color: #fca5a5; }
+    .risk-medium { background: rgba(217,119,6,.15); color: #fcd34d; }
+    .risk-low { background: rgba(22,163,74,.15); color: #86efac; }
+
+    .card-meta {
+      display: flex; flex-wrap: wrap; gap: .5rem;
+      margin-bottom: .75rem;
+    }
+    .meta-tag {
+      background: rgba(255,255,255,.06);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: .15rem .5rem;
+      font-size: .75rem;
+      color: var(--muted);
+    }
+
+    .drift-bar-wrap {
+      margin-bottom: .5rem;
+    }
+    .drift-bar-label {
+      display: flex; justify-content: space-between;
+      font-size: .75rem; color: var(--muted); margin-bottom: .25rem;
+    }
+    .drift-bar-track {
+      background: rgba(255,255,255,.08);
+      border-radius: 999px; height: 6px; overflow: hidden;
+    }
+    .drift-bar-fill {
+      height: 100%; border-radius: 999px;
+      transition: width .6s ease;
+    }
+
+    .card-metrics {
+      display: grid; grid-template-columns: 1fr 1fr;
+      gap: .5rem; margin-top: .75rem;
+    }
+    .metric {
+      background: rgba(255,255,255,.04);
+      border-radius: 6px;
+      padding: .5rem .75rem;
+    }
+    .metric-label { font-size: .7rem; color: var(--muted); margin-bottom: .15rem; }
+    .metric-value { font-size: .95rem; font-weight: 700; }
+
+    /* ── Explanation section ──────────────────────────────── */
+    .explainer {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 2rem;
+      margin-top: 1rem;
+    }
+    .explainer h3 {
+      font-size: 1.1rem; font-weight: 700; margin-bottom: 1rem;
+      color: #93c5fd;
+    }
+    .term-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 1rem;
+    }
+    .term {
+      border-left: 2px solid var(--indigo);
+      padding-left: 1rem;
+    }
+    .term-name { font-weight: 700; font-size: .9rem; margin-bottom: .25rem; }
+    .term-def { font-size: .85rem; color: var(--muted); }
+
+    /* ── Footer ──────────────────────────────────────────── */
+    footer {
+      border-top: 1px solid var(--border);
+      padding: 2rem;
+      text-align: center;
+      color: var(--muted);
+      font-size: .85rem;
+    }
+    footer a { color: #60a5fa; text-decoration: none; }
+
+    /* ── Loading / empty ──────────────────────────────────── */
+    .loading {
+      text-align: center; padding: 3rem; color: var(--muted);
+    }
+    .spinner {
+      display: inline-block; width: 32px; height: 32px;
+      border: 3px solid var(--border);
+      border-top-color: var(--indigo);
+      border-radius: 50%;
+      animation: spin .7s linear infinite;
+      margin-bottom: 1rem;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+
+<!-- ── Nav ──────────────────────────────────────────────────── -->
+<nav>
+  <div class="logo">Compliance<span>IQ</span></div>
+  <div>
+    <a href="#how-it-works">How it works</a>
+    <a href="#live-feed">Live Feed</a>
+    <a href="#glossary">Glossary</a>
+    <a href="/docs" class="api-btn">API Docs →</a>
+  </div>
+</nav>
+
+<!-- ── Hero ─────────────────────────────────────────────────── -->
+<div class="hero">
+  <div class="badge">🏦 Banking Regulatory Intelligence · Live Demo</div>
+  <h1>Know which banking<br>regulations changed<br>before they cost you.</h1>
+  <p>ComplianceIQ reads every US banking regulation published by the OCC, FDIC, FRB, and CFPB — and tells you in plain English which ones matter, why, and how much money is at stake.</p>
+  <div class="hero-btns">
+    <a href="#live-feed" class="btn-primary">See Live Regulations ↓</a>
+    <a href="/docs" class="btn-secondary">Explore the API</a>
+  </div>
+</div>
+
+<!-- ── Stats strip ───────────────────────────────────────────── -->
+<div class="stats">
+  <div class="stat">
+    <div class="stat-value" id="total-regs">—</div>
+    <div class="stat-label">Regulations tracked</div>
+  </div>
+  <div class="stat">
+    <div class="stat-value" id="flagged-count">—</div>
+    <div class="stat-label">Flagged for review</div>
+  </div>
+  <div class="stat">
+    <div class="stat-value" id="agency-count">—</div>
+    <div class="stat-label">Regulatory agencies</div>
+  </div>
+  <div class="stat">
+    <div class="stat-value">3</div>
+    <div class="stat-label">Detection methods</div>
+  </div>
+  <div class="stat">
+    <div class="stat-value">178</div>
+    <div class="stat-label">Tests passing</div>
+  </div>
+</div>
+
+<!-- ── How it works ─────────────────────────────────────────── -->
+<section id="how-it-works">
+  <h2>How it works</h2>
+  <p class="section-sub">Four steps from a published regulation to a dollar figure on your desk.</p>
+  <div class="steps">
+    <div class="step">
+      <div class="step-icon">📡</div>
+      <h3>1. Fetch</h3>
+      <p>Every day, a pipeline pulls the latest rules from the Federal Register, FDIC, and Federal Reserve APIs — automatically, no manual reading required.</p>
+    </div>
+    <div class="step">
+      <div class="step-icon">🔬</div>
+      <h3>2. Detect change</h3>
+      <p>Three mathematical methods measure how much the language changed from the previous version. Small edits score low. New capital requirements score high.</p>
+    </div>
+    <div class="step">
+      <div class="step-icon">⚖️</div>
+      <h3>3. Measure impact</h3>
+      <p>Causal inference (the same technique used in economics research) estimates how much the regulation will change your bank's risk-weighted assets in dollars.</p>
+    </div>
+    <div class="step">
+      <div class="step-icon">🤖</div>
+      <h3>4. Explain</h3>
+      <p>An AI agent reads the full regulation and writes a plain-English summary: which business lines are affected, which CFR sections changed, and what to do next.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ── Live feed ─────────────────────────────────────────────── -->
+<section id="live-feed">
+  <h2>Live Regulation Feed</h2>
+  <p class="section-sub">Real data from the database, updated continuously. Risk level is based on how much the regulation's language changed from the previous version.</p>
+
+  <div class="filters">
+    <button class="filter-btn active" onclick="filterRegs('all', this)">All Regulations</button>
+    <button class="filter-btn" onclick="filterRegs('high', this)">🔴 High Risk</button>
+    <button class="filter-btn" onclick="filterRegs('medium', this)">🟡 Medium Risk</button>
+    <button class="filter-btn" onclick="filterRegs('low', this)">🟢 Low Risk</button>
+    <button class="filter-btn" onclick="filterRegs('capital', this)">Capital</button>
+    <button class="filter-btn" onclick="filterRegs('aml', this)">AML</button>
+    <button class="filter-btn" onclick="filterRegs('consumer_protection', this)">Consumer</button>
+  </div>
+
+  <div id="reg-grid" class="reg-grid">
+    <div class="loading">
+      <div class="spinner"></div>
+      <div>Loading live regulations…</div>
+    </div>
+  </div>
+</section>
+
+<!-- ── Glossary ──────────────────────────────────────────────── -->
+<section id="glossary">
+  <h2>What do these numbers mean?</h2>
+  <p class="section-sub">Plain-English definitions for every metric on this page.</p>
+  <div class="explainer">
+    <h3>Risk &amp; Change Detection</h3>
+    <div class="term-grid">
+      <div class="term">
+        <div class="term-name">Drift Score (0–1)</div>
+        <div class="term-def">How different the new regulation text is from the old one. 0 = identical. 1 = completely rewritten. Above 0.15 triggers a review flag.</div>
+      </div>
+      <div class="term">
+        <div class="term-name">JSD Score</div>
+        <div class="term-def">Jensen-Shannon Divergence — measures how the statistical distribution of words changed. Catches subtle rewording that drift score might miss.</div>
+      </div>
+      <div class="term">
+        <div class="term-name">Wasserstein Score</div>
+        <div class="term-def">Earth Mover's Distance — measures how far the meaning "moved". High scores mean the topic shifted significantly, not just the wording.</div>
+      </div>
+      <div class="term">
+        <div class="term-name">Flagged for Review</div>
+        <div class="term-def">Any regulation where the drift score crosses the 0.15 threshold. These are sent to compliance officers for manual review first.</div>
+      </div>
+      <div class="term">
+        <div class="term-name">Confidence Interval</div>
+        <div class="term-def">The range we're 95% sure the true drift score falls within. A narrow band means the measurement is reliable. A wide band means more data is needed.</div>
+      </div>
+      <div class="term">
+        <div class="term-name">ATT Estimate ($M)</div>
+        <div class="term-def">Average Treatment Effect — the causal estimate of how much this regulation will change a bank's Risk-Weighted Assets in millions of dollars.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── Footer ────────────────────────────────────────────────── -->
+<footer>
+  <p>ComplianceIQ · Built with FastAPI, TimescaleDB, ChromaDB, LangGraph &amp; econml</p>
+  <p style="margin-top:.5rem">
+    <a href="/docs">API Documentation</a> ·
+    <a href="https://github.com/Jainishpatel1019/Complianceiq" target="_blank">GitHub</a>
+  </p>
+</footer>
+
+<script>
+  const BASE = '';   // same origin
+  let allRegs = [];
+  let currentFilter = 'all';
+
+  function riskLevel(score) {
+    if (!score) return 'low';
+    if (score > 0.25) return 'high';
+    if (score > 0.12) return 'medium';
+    return 'low';
+  }
+
+  function riskLabel(level) {
+    return { high: '🔴 High Risk', medium: '🟡 Medium Risk', low: '🟢 Low Risk' }[level];
+  }
+
+  function fmtDate(iso) {
+    if (!iso) return '—';
+    return new Date(iso).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+  }
+
+  function agencyColor(agency) {
+    const map = { OCC: '#3b82f6', FDIC: '#8b5cf6', FRB: '#06b6d4', CFPB: '#f59e0b', FinCEN: '#10b981' };
+    return map[agency] || '#64748b';
+  }
+
+  function buildCard(reg) {
+    const cs = reg.latest_change_score || {};
+    const drift = cs.drift_score || 0;
+    const level = riskLevel(drift);
+    const pct = Math.min(Math.round(drift * 100), 100);
+    const barColor = level === 'high' ? '#ef4444' : level === 'medium' ? '#f59e0b' : '#22c55e';
+    const typeName = (reg.regulation_type || 'general').replace('_', ' ');
+
+    return `
+      <div class="reg-card ${level}-risk" data-risk="${level}" data-type="${reg.regulation_type || ''}">
+        <div class="card-header">
+          <div class="card-title">${reg.title}</div>
+          <span class="risk-badge risk-${level}">${level}</span>
+        </div>
+        <div class="card-meta">
+          <span class="meta-tag" style="color:${agencyColor(reg.agency)};border-color:${agencyColor(reg.agency)}40">${reg.agency}</span>
+          <span class="meta-tag">${typeName}</span>
+          <span class="meta-tag">${fmtDate(reg.publication_date)}</span>
+          ${cs.flagged_for_analysis ? '<span class="meta-tag" style="color:#fca5a5;border-color:#fca5a580">⚑ Flagged</span>' : ''}
+        </div>
+
+        ${drift ? `
+        <div class="drift-bar-wrap">
+          <div class="drift-bar-label">
+            <span>Language change from previous version</span>
+            <span style="color:${barColor};font-weight:700">${pct}%</span>
+          </div>
+          <div class="drift-bar-track">
+            <div class="drift-bar-fill" style="width:${pct}%;background:${barColor}"></div>
+          </div>
+        </div>
+        <div class="card-metrics">
+          <div class="metric">
+            <div class="metric-label">Drift Score</div>
+            <div class="metric-value" style="color:${barColor}">${drift.toFixed(3)}</div>
+          </div>
+          <div class="metric">
+            <div class="metric-label">Stat. Significance</div>
+            <div class="metric-value">${cs.jsd_p_value ? (cs.jsd_p_value < 0.05 ? '✓ Significant' : 'Not significant') : '—'}</div>
+          </div>
+          <div class="metric">
+            <div class="metric-label">JSD Score</div>
+            <div class="metric-value">${cs.jsd_score ? cs.jsd_score.toFixed(3) : '—'}</div>
+          </div>
+          <div class="metric">
+            <div class="metric-label">Wasserstein</div>
+            <div class="metric-value">${cs.wasserstein_score ? cs.wasserstein_score.toFixed(3) : '—'}</div>
+          </div>
+        </div>
+        ` : `<div style="color:var(--muted);font-size:.85rem">No version changes recorded yet.</div>`}
+      </div>`;
+  }
+
+  function renderGrid(regs) {
+    const grid = document.getElementById('reg-grid');
+    if (!regs.length) {
+      grid.innerHTML = '<div class="loading">No regulations match this filter.</div>';
+      return;
+    }
+    grid.innerHTML = regs.map(buildCard).join('');
+  }
+
+  function filterRegs(filter, btn) {
+    currentFilter = filter;
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+
+    let filtered = allRegs;
+    if (filter === 'high') filtered = allRegs.filter(r => riskLevel(r.latest_change_score?.drift_score) === 'high');
+    else if (filter === 'medium') filtered = allRegs.filter(r => riskLevel(r.latest_change_score?.drift_score) === 'medium');
+    else if (filter === 'low') filtered = allRegs.filter(r => riskLevel(r.latest_change_score?.drift_score) === 'low');
+    else if (filter !== 'all') filtered = allRegs.filter(r => r.regulation_type === filter);
+
+    renderGrid(filtered);
+  }
+
+  async function loadData() {
+    try {
+      const res = await fetch(`${BASE}/api/v1/regulations?page_size=50`);
+      const data = await res.json();
+      allRegs = data.items || data.regulations || data || [];
+
+      // Sort: flagged first, then by drift score desc
+      allRegs.sort((a, b) => {
+        const da = a.latest_change_score?.drift_score || 0;
+        const db = b.latest_change_score?.drift_score || 0;
+        return db - da;
+      });
+
+      // Update stats
+      document.getElementById('total-regs').textContent = data.total || allRegs.length;
+      const flagged = allRegs.filter(r => r.latest_change_score?.flagged_for_analysis).length;
+      document.getElementById('flagged-count').textContent = flagged;
+      const agencies = new Set(allRegs.map(r => r.agency)).size;
+      document.getElementById('agency-count').textContent = agencies;
+
+      renderGrid(allRegs);
+    } catch (err) {
+      document.getElementById('reg-grid').innerHTML =
+        '<div class="loading">Could not load data. Make sure the API is running.</div>';
+      console.error(err);
+    }
+  }
+
+  loadData();
+</script>
+</body>
+</html>
