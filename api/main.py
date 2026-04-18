@@ -20,6 +20,8 @@ from typing import AsyncGenerator
 import structlog
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import RedirectResponse
+from fastapi.staticfiles import StaticFiles
 
 from api.routes import regulations, reports, health, change_scores, causal, graph
 from api.websockets import router as ws_router
@@ -79,7 +81,8 @@ app = FastAPI(
 _cors_origins = [
     "http://localhost:3000",
     "http://localhost:8081",
-    "https://jainish1019-complianceiq.hf.space",  # HF Space URL
+    "https://jainish1019-complianceiq.hf.space",   # old URL (kept for safety)
+    "https://jainishp1019-complianceiq.hf.space",  # actual HF Space URL
 ]
 _extra = os.environ.get("FRONTEND_URL", "").strip()
 if _extra and _extra not in _cors_origins:
@@ -101,3 +104,18 @@ app.include_router(change_scores.router, prefix="/api/v1/change-scores", tags=["
 app.include_router(causal.router, prefix="/api/v1/causal", tags=["causal"])
 app.include_router(graph.router,  prefix="/api/v1/graph",  tags=["graph"])
 app.include_router(ws_router, prefix="/ws", tags=["websockets"])
+
+# ── Root redirect + static frontend ──────────────────────────────────────────
+# If the built React app exists (frontend/dist), serve it at /app so the full
+# UI is available in the HF Space. Root / redirects to /docs as a fallback.
+_frontend_dist = os.path.join(os.path.dirname(__file__), "..", "frontend", "dist")
+if os.path.isdir(_frontend_dist):
+    app.mount("/app", StaticFiles(directory=_frontend_dist, html=True), name="frontend")
+
+
+@app.get("/", include_in_schema=False)
+async def root() -> RedirectResponse:
+    """Redirect / to the interactive API docs (or frontend if available)."""
+    if os.path.isdir(_frontend_dist):
+        return RedirectResponse(url="/app")
+    return RedirectResponse(url="/docs")
