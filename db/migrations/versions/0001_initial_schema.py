@@ -30,8 +30,29 @@ depends_on = None
 
 def upgrade() -> None:
     # ── Enable extensions ───────────────────────────────────────────────────
-    op.execute("CREATE EXTENSION IF NOT EXISTS timescaledb CASCADE;")
-    op.execute("CREATE EXTENSION IF NOT EXISTS vector;")  # pgvector
+    # TimescaleDB: optional — available in the full dev stack (timescale image)
+    # but not in plain postgres (e.g. HF single-container deploy). Tables work
+    # without it; hypertables are a performance optimisation, not a correctness
+    # requirement. Both create_hypertable calls below are also wrapped.
+    op.execute("""
+        DO $$
+        BEGIN
+            CREATE EXTENSION IF NOT EXISTS timescaledb CASCADE;
+        EXCEPTION WHEN OTHERS THEN
+            RAISE WARNING 'timescaledb not available — skipping (tables will work without it): %', SQLERRM;
+        END;
+        $$;
+    """)
+    # pgvector: optional for the same reason
+    op.execute("""
+        DO $$
+        BEGIN
+            CREATE EXTENSION IF NOT EXISTS vector;
+        EXCEPTION WHEN OTHERS THEN
+            RAISE WARNING 'pgvector not available — skipping: %', SQLERRM;
+        END;
+        $$;
+    """)
 
     # ── regulations ──────────────────────────────────────────────────────────
     op.create_table(
@@ -96,9 +117,16 @@ def upgrade() -> None:
         sa.PrimaryKeyConstraint("id", "computed_at", name="pk_change_scores"),
     )
     # Convert to hypertable — chunk by 7-day intervals (one week of scores per chunk)
-    op.execute(
-        "SELECT create_hypertable('change_scores', 'computed_at', chunk_time_interval => INTERVAL '7 days');"
-    )
+    op.execute("""
+        DO $$
+        BEGIN
+            PERFORM create_hypertable('change_scores', 'computed_at',
+                chunk_time_interval => INTERVAL '7 days');
+        EXCEPTION WHEN OTHERS THEN
+            RAISE WARNING 'create_hypertable(change_scores) skipped: %', SQLERRM;
+        END;
+        $$;
+    """)
     op.create_index("ix_change_scores_regulation_id", "change_scores", ["regulation_id"])
     op.create_index("ix_change_scores_flagged", "change_scores", ["flagged_for_analysis"])
 
@@ -144,9 +172,16 @@ def upgrade() -> None:
         sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.text("now()"), nullable=False),
         sa.PrimaryKeyConstraint("id", "created_at", name="pk_agent_reports"),
     )
-    op.execute(
-        "SELECT create_hypertable('agent_reports', 'created_at', chunk_time_interval => INTERVAL '30 days');"
-    )
+    op.execute("""
+        DO $$
+        BEGIN
+            PERFORM create_hypertable('agent_reports', 'created_at',
+                chunk_time_interval => INTERVAL '30 days');
+        EXCEPTION WHEN OTHERS THEN
+            RAISE WARNING 'create_hypertable(agent_reports) skipped: %', SQLERRM;
+        END;
+        $$;
+    """)
     op.create_index("ix_agent_reports_regulation_id", "agent_reports", ["regulation_id"])
     op.create_index("ix_agent_reports_impact_high", "agent_reports", ["impact_score_high"])
 
