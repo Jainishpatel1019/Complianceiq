@@ -45,46 +45,38 @@ log = structlog.get_logger()
 
 
 async def _auto_seed_if_empty() -> None:
-    """Self-healing seed: if the DB is empty, run the offline generator.
+    """Self-healing seed — runs inside the API's own async event loop.
 
-    Runs as a background asyncio task 5 seconds after startup.
-    Independent of start.sh so it works even if the shell seed fails.
-    The offline generator has zero network calls and completes in ~30s.
+    Uses api/seed.py which has ZERO external dependencies (no sklearn,
+    no ChromaDB, no subprocess). Inserts directly via AsyncSession.
+    Triggered 3 seconds after startup if the DB is empty.
     """
-    await asyncio.sleep(5)   # let uvicorn fully initialise first
+    await asyncio.sleep(3)
     try:
         from sqlalchemy import text as sqla_text
+        from sqlalchemy.ext.asyncio import AsyncSession
+        from sqlalchemy.orm import sessionmaker
         from db import get_engine
+        from api.seed import seed_db
+
         engine = get_engine()
+        async_session = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
+
         async with engine.connect() as conn:
             row = await conn.execute(sqla_text("SELECT COUNT(*) FROM regulations"))
             count = row.scalar() or 0
+
         if count > 0:
             log.info("auto_seed_skip", existing=count)
             return
-        log.info("auto_seed_start", reason="DB is empty — running offline generator")
-        # Run the offline bulk seed in a thread so it doesn't block the event loop
-        loop = asyncio.get_event_loop()
-        await loop.run_in_executor(None, _run_offline_seed)
-        log.info("auto_seed_complete")
+
+        log.info("auto_seed_start", reason="DB empty — running self-contained seed")
+        async with async_session() as session:
+            inserted = await seed_db(session, target=3300)
+        log.info("auto_seed_complete", inserted=inserted)
+
     except Exception as exc:
         log.error("auto_seed_failed", error=str(exc))
-
-
-def _run_offline_seed() -> None:
-    """Synchronous wrapper — called from a thread executor."""
-    import sys, os
-    # Ensure the project root is on sys.path
-    root = os.path.join(os.path.dirname(__file__), "..")
-    if root not in sys.path:
-        sys.path.insert(0, root)
-    try:
-        from backend.pipelines.seed_bulk import main as seed_main
-        seed_main(target=3300)
-    except Exception as exc:
-        # Log but don't crash — the API should still serve even if seeding fails
-        import logging
-        logging.getLogger(__name__).error(f"_run_offline_seed failed: {exc}")
 
 
 @asynccontextmanager

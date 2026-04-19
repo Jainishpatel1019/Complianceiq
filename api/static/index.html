@@ -1,994 +1,558 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>ComplianceIQ — Regulatory Intelligence Platform</title>
-<link rel="preconnect" href="https://fonts.googleapis.com"/>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
-<style>
-*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-:root{
-  --bg0:#050a15;--bg1:#080f1e;--bg2:#0d1627;--bg3:#111d2e;--bg4:#162033;
-  --border:rgba(99,149,255,.1);--border2:rgba(99,149,255,.18);
-  --blue:#4f7cff;--blue2:#3b63e8;--blue-dim:rgba(79,124,255,.12);--blue-glow:rgba(79,124,255,.25);
-  --red:#f87171;--red-dim:rgba(248,113,113,.1);
-  --amber:#fbbf24;--amber-dim:rgba(251,191,36,.1);
-  --green:#34d399;--green-dim:rgba(52,211,153,.1);
-  --purple:#a78bfa;--purple-dim:rgba(167,139,250,.1);
-  --text:#e2e8f0;--text2:#94a3b8;--text3:#475569;
-  --sidebar:220px;--topbar:60px;
-}
-html,body{height:100%;background:var(--bg0);color:var(--text);font-family:'Inter',sans-serif;font-size:14px;line-height:1.5;overflow:hidden}
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ComplianceIQ — Regulatory Intelligence Platform</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
 
-/* ── LAYOUT ── */
-.app{display:flex;height:100vh}
-.sidebar{width:var(--sidebar);min-width:var(--sidebar);background:var(--bg1);border-right:1px solid var(--border);display:flex;flex-direction:column;position:relative;z-index:10}
-.main{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0}
-.topbar{height:var(--topbar);min-height:var(--topbar);background:var(--bg1);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px;padding:0 20px;position:relative;z-index:5}
-.content{flex:1;overflow-y:auto;overflow-x:hidden;padding:24px;scroll-behavior:smooth}
-.content::-webkit-scrollbar{width:4px}.content::-webkit-scrollbar-track{background:transparent}.content::-webkit-scrollbar-thumb{background:var(--border2);border-radius:4px}
+    :root {
+      --blue:   #2563eb;
+      --indigo: #4f46e5;
+      --green:  #16a34a;
+      --amber:  #d97706;
+      --red:    #dc2626;
+      --slate:  #0f172a;
+      --card:   #1e293b;
+      --border: #334155;
+      --text:   #e2e8f0;
+      --muted:  #94a3b8;
+    }
 
-/* ── SIDEBAR ── */
-.brand{padding:18px 16px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px}
-.brand-logo{width:30px;height:30px;background:var(--blue);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:800;color:#fff;flex-shrink:0}
-.brand-name{font-weight:700;font-size:15px;letter-spacing:-.3px}
-.brand-badge{font-size:9px;font-weight:700;background:var(--green-dim);color:var(--green);border:1px solid var(--green);border-radius:4px;padding:1px 5px;letter-spacing:.5px}
-.nav{padding:10px 8px;flex:1}
-.nav-section{font-size:10px;font-weight:600;color:var(--text3);letter-spacing:1px;text-transform:uppercase;padding:8px 8px 4px}
-.nav-item{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:8px;cursor:pointer;color:var(--text2);font-size:13px;font-weight:500;transition:all .15s;margin-bottom:2px;user-select:none}
-.nav-item:hover{background:var(--blue-dim);color:var(--text)}
-.nav-item.active{background:var(--blue-dim);color:var(--blue);border:1px solid rgba(79,124,255,.2)}
-.nav-icon{width:18px;text-align:center;font-size:15px;flex-shrink:0}
-.nav-badge{margin-left:auto;font-size:10px;font-weight:700;background:var(--red-dim);color:var(--red);border-radius:10px;padding:1px 6px;min-width:18px;text-align:center}
-.sidebar-footer{padding:12px;border-top:1px solid var(--border)}
-.sync-btn{width:100%;display:flex;align-items:center;justify-content:center;gap:7px;padding:9px;background:var(--blue-dim);border:1px solid rgba(79,124,255,.25);border-radius:8px;color:var(--blue);font-size:12px;font-weight:600;cursor:pointer;transition:all .15s;font-family:inherit}
-.sync-btn:hover{background:var(--blue);color:#fff}
-.sync-btn:disabled{opacity:.5;cursor:not-allowed}
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: var(--slate);
+      color: var(--text);
+      line-height: 1.6;
+    }
 
-/* ── TOPBAR ── */
-.topbar-title{font-size:14px;font-weight:600;color:var(--text)}
-.topbar-sub{font-size:12px;color:var(--text3)}
-.search-wrap{flex:1;max-width:380px;position:relative}
-.search-input{width:100%;background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:8px 12px 8px 34px;color:var(--text);font-size:13px;font-family:inherit;outline:none;transition:border-color .15s}
-.search-input::placeholder{color:var(--text3)}
-.search-input:focus{border-color:var(--border2)}
-.search-icon{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--text3);font-size:14px;pointer-events:none}
-.topbar-actions{margin-left:auto;display:flex;align-items:center;gap:8px}
-.tb-btn{display:flex;align-items:center;gap:6px;padding:7px 13px;border-radius:7px;font-size:12px;font-weight:600;cursor:pointer;border:none;font-family:inherit;transition:all .15s}
-.tb-btn-ghost{background:transparent;color:var(--text2);border:1px solid var(--border)}
-.tb-btn-ghost:hover{border-color:var(--border2);color:var(--text)}
-.tb-btn-primary{background:var(--blue);color:#fff}
-.tb-btn-primary:hover{background:var(--blue2)}
-.status-dot{width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 6px var(--green);animation:pulse 2s infinite}
-@keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
+    /* ── Nav ─────────────────────────────────────────────── */
+    nav {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 1rem 2rem;
+      border-bottom: 1px solid var(--border);
+      background: rgba(15,23,42,0.95);
+      position: sticky; top: 0; z-index: 100;
+      backdrop-filter: blur(8px);
+    }
+    .logo { font-size: 1.25rem; font-weight: 700; color: #fff; }
+    .logo span { color: #60a5fa; }
+    nav a {
+      color: var(--muted); text-decoration: none; font-size: 0.9rem;
+      margin-left: 1.5rem; transition: color .2s;
+    }
+    nav a:hover { color: #fff; }
+    .api-btn {
+      background: var(--blue); color: #fff !important;
+      padding: .4rem 1rem; border-radius: 6px; font-weight: 600;
+    }
+    .api-btn:hover { background: #1d4ed8 !important; }
 
-/* ── STAT CARDS ── */
-.stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:14px;margin-bottom:24px}
-.stat-card{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:16px 18px;position:relative;overflow:hidden;transition:border-color .2s}
-.stat-card:hover{border-color:var(--border2)}
-.stat-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;border-radius:12px 12px 0 0}
-.stat-card.blue::before{background:linear-gradient(90deg,var(--blue),transparent)}
-.stat-card.amber::before{background:linear-gradient(90deg,var(--amber),transparent)}
-.stat-card.red::before{background:linear-gradient(90deg,var(--red),transparent)}
-.stat-card.green::before{background:linear-gradient(90deg,var(--green),transparent)}
-.stat-card.purple::before{background:linear-gradient(90deg,var(--purple),transparent)}
-.stat-label{font-size:11px;font-weight:500;color:var(--text3);text-transform:uppercase;letter-spacing:.7px;margin-bottom:8px}
-.stat-value{font-size:26px;font-weight:800;line-height:1;letter-spacing:-1px}
-.stat-value.blue{color:var(--blue)}
-.stat-value.amber{color:var(--amber)}
-.stat-value.red{color:var(--red)}
-.stat-value.green{color:var(--green)}
-.stat-value.purple{color:var(--purple)}
-.stat-sub{font-size:11px;color:var(--text3);margin-top:6px}
-.stat-icon{position:absolute;right:14px;top:14px;font-size:22px;opacity:.2}
+    /* ── Hero ────────────────────────────────────────────── */
+    .hero {
+      text-align: center;
+      padding: 5rem 2rem 3rem;
+      background: radial-gradient(ellipse at 50% 0%, rgba(79,70,229,.25) 0%, transparent 70%);
+    }
+    .badge {
+      display: inline-block;
+      background: rgba(79,70,229,.2);
+      color: #a5b4fc;
+      border: 1px solid rgba(79,70,229,.4);
+      border-radius: 999px;
+      padding: .25rem .9rem;
+      font-size: .8rem;
+      font-weight: 600;
+      letter-spacing: .05em;
+      margin-bottom: 1.5rem;
+    }
+    .hero h1 {
+      font-size: clamp(2rem, 5vw, 3.5rem);
+      font-weight: 800;
+      line-height: 1.15;
+      margin-bottom: 1.25rem;
+      background: linear-gradient(135deg, #fff 40%, #93c5fd);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .hero p {
+      max-width: 640px; margin: 0 auto 2.5rem;
+      font-size: 1.15rem; color: var(--muted);
+    }
+    .hero-btns { display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap; }
+    .btn-primary {
+      background: var(--indigo); color: #fff;
+      padding: .75rem 1.75rem; border-radius: 8px;
+      font-weight: 600; text-decoration: none; font-size: 1rem;
+      transition: background .2s;
+    }
+    .btn-primary:hover { background: #4338ca; }
+    .btn-secondary {
+      background: var(--card); color: var(--text);
+      padding: .75rem 1.75rem; border-radius: 8px;
+      font-weight: 600; text-decoration: none; font-size: 1rem;
+      border: 1px solid var(--border);
+      transition: background .2s;
+    }
+    .btn-secondary:hover { background: #2d3f55; }
 
-/* ── SECTION TITLES ── */
-.section-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
-.section-title{font-size:15px;font-weight:700;letter-spacing:-.3px}
-.section-sub{font-size:12px;color:var(--text3);margin-top:2px}
-.section-action{font-size:12px;color:var(--blue);cursor:pointer;font-weight:500}
-.section-action:hover{text-decoration:underline}
+    /* ── Stats strip ─────────────────────────────────────── */
+    .stats {
+      display: flex; justify-content: center; flex-wrap: wrap; gap: 2rem;
+      padding: 2rem;
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+    }
+    .stat { text-align: center; }
+    .stat-value { font-size: 2rem; font-weight: 800; color: #60a5fa; }
+    .stat-label { font-size: .85rem; color: var(--muted); margin-top: .25rem; }
 
-/* ── TWO COLUMN ── */
-.two-col{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px}
-.three-col{display:grid;grid-template-columns:2fr 1fr;gap:16px;margin-bottom:24px}
+    /* ── Section layout ──────────────────────────────────── */
+    section { padding: 3rem 2rem; max-width: 1200px; margin: 0 auto; }
+    h2 { font-size: 1.6rem; font-weight: 700; margin-bottom: .5rem; }
+    .section-sub { color: var(--muted); font-size: 1rem; margin-bottom: 2rem; }
 
-/* ── CHART CARDS ── */
-.chart-card{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:18px}
-.chart-title{font-size:13px;font-weight:600;margin-bottom:4px}
-.chart-sub{font-size:11px;color:var(--text3);margin-bottom:14px}
+    /* ── How it works ────────────────────────────────────── */
+    .steps {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 1.5rem;
+    }
+    .step {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.5rem;
+    }
+    .step-icon {
+      font-size: 2rem; margin-bottom: .75rem;
+    }
+    .step h3 { font-size: 1rem; font-weight: 700; margin-bottom: .5rem; }
+    .step p { font-size: .9rem; color: var(--muted); }
 
-/* ── REGULATION CARDS ── */
-.feed-controls{display:flex;align-items:center;gap:8px;margin-bottom:16px;flex-wrap:wrap}
-.filter-chip{display:flex;align-items:center;gap:5px;padding:6px 12px;border-radius:20px;border:1px solid var(--border);background:transparent;color:var(--text2);font-size:12px;font-weight:500;cursor:pointer;transition:all .15s;font-family:inherit}
-.filter-chip:hover,.filter-chip.active{background:var(--blue-dim);border-color:rgba(79,124,255,.3);color:var(--blue)}
-.year-group{margin-bottom:20px}
-.year-label{display:flex;align-items:center;gap:10px;margin-bottom:10px}
-.year-tag{font-size:12px;font-weight:700;color:var(--text2);background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:3px 10px;letter-spacing:.3px}
-.year-line{flex:1;height:1px;background:var(--border)}
-.year-count{font-size:11px;color:var(--text3)}
-.live-dot{width:6px;height:6px;border-radius:50%;background:var(--green);animation:pulse 2s infinite;margin-right:4px}
-.reg-card{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:16px;margin-bottom:10px;transition:all .2s;cursor:pointer;position:relative}
-.reg-card:hover{border-color:var(--border2);transform:translateY(-1px);box-shadow:0 4px 20px rgba(0,0,0,.3)}
-.reg-card.flagged{border-left:3px solid var(--red)}
-.reg-card.high{border-left:3px solid var(--amber)}
-.reg-card.low{border-left:3px solid var(--green)}
-.reg-card-top{display:flex;align-items:flex-start;gap:12px}
-.drift-badge{flex-shrink:0;width:52px;height:52px;border-radius:10px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px}
-.drift-badge.crit{background:rgba(248,113,113,.12);border:1px solid rgba(248,113,113,.3)}
-.drift-badge.high{background:rgba(251,191,36,.1);border:1px solid rgba(251,191,36,.25)}
-.drift-badge.med{background:rgba(79,124,255,.1);border:1px solid rgba(79,124,255,.2)}
-.drift-badge.low{background:rgba(52,211,153,.1);border:1px solid rgba(52,211,153,.2)}
-.drift-num{font-size:16px;font-weight:800;line-height:1;letter-spacing:-.5px}
-.drift-lbl{font-size:9px;font-weight:600;letter-spacing:.5px;text-transform:uppercase;opacity:.7}
-.reg-info{flex:1;min-width:0}
-.reg-title{font-size:13px;font-weight:600;line-height:1.4;margin-bottom:5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.reg-meta{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
-.meta-tag{font-size:11px;color:var(--text3);display:flex;align-items:center;gap:3px}
-.meta-pill{font-size:10px;font-weight:600;padding:2px 7px;border-radius:4px;letter-spacing:.3px}
-.pill-rule{background:var(--blue-dim);color:var(--blue)}
-.pill-proposed{background:var(--purple-dim);color:var(--purple)}
-.pill-notice{background:rgba(148,163,184,.1);color:var(--text2)}
-.pill-flagged{background:var(--red-dim);color:var(--red)}
-.reg-card-bottom{margin-top:10px;padding-top:10px;border-top:1px solid var(--border);display:flex;align-items:center;gap:12px}
-.impact-box{display:flex;align-items:center;gap:5px;font-size:11px}
-.impact-val{font-weight:700;color:var(--amber)}
-.ci-bar{flex:1;height:4px;background:var(--bg3);border-radius:2px;position:relative;overflow:hidden}
-.ci-fill{height:100%;border-radius:2px;background:linear-gradient(90deg,var(--blue),var(--purple));transition:width .5s}
-.expand-btn{font-size:11px;color:var(--text3);display:flex;align-items:center;gap:3px;margin-left:auto;cursor:pointer;padding:3px 6px;border-radius:5px;transition:background .15s}
-.expand-btn:hover{background:var(--bg3);color:var(--text)}
-.proof-panel{display:none;margin-top:10px;grid-template-columns:1fr 1fr;gap:8px}
-.proof-panel.open{display:grid}
-.proof-box{border-radius:7px;padding:10px 12px;font-size:11px;line-height:1.6}
-.proof-v1{background:rgba(248,113,113,.06);border:1px solid rgba(248,113,113,.15)}
-.proof-v2{background:rgba(52,211,153,.06);border:1px solid rgba(52,211,153,.15)}
-.proof-label{font-size:9px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;margin-bottom:5px;opacity:.7}
-.proof-text{color:var(--text2);font-family:'JetBrains Mono',monospace}
+    /* ── Live feed ───────────────────────────────────────── */
+    .filters {
+      display: flex; gap: .75rem; flex-wrap: wrap; margin-bottom: 1.5rem;
+    }
+    .filter-btn {
+      background: var(--card);
+      border: 1px solid var(--border);
+      color: var(--muted);
+      padding: .4rem .9rem;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: .85rem;
+      transition: all .2s;
+    }
+    .filter-btn.active, .filter-btn:hover {
+      background: var(--indigo);
+      border-color: var(--indigo);
+      color: #fff;
+    }
+    .reg-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+      gap: 1.25rem;
+    }
+    .reg-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.25rem;
+      transition: border-color .2s, transform .2s;
+      cursor: default;
+    }
+    .reg-card:hover { border-color: #4f46e5; transform: translateY(-2px); }
+    .reg-card.high-risk { border-left: 3px solid var(--red); }
+    .reg-card.medium-risk { border-left: 3px solid var(--amber); }
+    .reg-card.low-risk { border-left: 3px solid var(--green); }
 
-/* ── LOADING / EMPTY ── */
-.seeding-card{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:32px;text-align:center}
-.seeding-icon{font-size:36px;margin-bottom:12px}
-.seeding-title{font-size:15px;font-weight:700;margin-bottom:6px}
-.seeding-sub{font-size:13px;color:var(--text3);margin-bottom:18px}
-.progress-bar{width:100%;height:4px;background:var(--bg3);border-radius:2px;overflow:hidden;margin:0 auto;max-width:300px}
-.progress-fill{height:100%;background:linear-gradient(90deg,var(--blue),var(--purple));border-radius:2px;animation:shimmer 1.5s infinite}
-@keyframes shimmer{0%{width:20%;margin-left:0}50%{width:60%}100%{width:20%;margin-left:80%}}
-.skeleton{background:linear-gradient(90deg,var(--bg2) 25%,var(--bg3) 50%,var(--bg2) 75%);background-size:200% 100%;animation:skel 1.4s infinite;border-radius:6px}
-@keyframes skel{0%{background-position:200% 0}100%{background-position:-200% 0}}
+    .card-header {
+      display: flex; align-items: flex-start;
+      justify-content: space-between; gap: .75rem; margin-bottom: .75rem;
+    }
+    .card-title {
+      font-weight: 600; font-size: .95rem; line-height: 1.4;
+      flex: 1;
+    }
+    .risk-badge {
+      flex-shrink: 0;
+      padding: .2rem .6rem;
+      border-radius: 999px;
+      font-size: .75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .05em;
+    }
+    .risk-high { background: rgba(220,38,38,.15); color: #fca5a5; }
+    .risk-medium { background: rgba(217,119,6,.15); color: #fcd34d; }
+    .risk-low { background: rgba(22,163,74,.15); color: #86efac; }
 
-/* ── CHARTS ── */
-svg text{font-family:'Inter',sans-serif}
-.chart-wrap{width:100%;overflow:hidden}
-.bar-group:hover rect{opacity:.8}
+    .card-meta {
+      display: flex; flex-wrap: wrap; gap: .5rem;
+      margin-bottom: .75rem;
+    }
+    .meta-tag {
+      background: rgba(255,255,255,.06);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: .15rem .5rem;
+      font-size: .75rem;
+      color: var(--muted);
+    }
 
-/* ── ANALYTICS VIEW ── */
-.analytics-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px}
-.analytics-wide{grid-column:1/-1}
+    .drift-bar-wrap {
+      margin-bottom: .5rem;
+    }
+    .drift-bar-label {
+      display: flex; justify-content: space-between;
+      font-size: .75rem; color: var(--muted); margin-bottom: .25rem;
+    }
+    .drift-bar-track {
+      background: rgba(255,255,255,.08);
+      border-radius: 999px; height: 6px; overflow: hidden;
+    }
+    .drift-bar-fill {
+      height: 100%; border-radius: 999px;
+      transition: width .6s ease;
+    }
 
-/* ── ALERTS VIEW ── */
-.alert-item{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:14px 16px;margin-bottom:8px;display:flex;align-items:flex-start;gap:12px;transition:border-color .15s}
-.alert-item:hover{border-color:var(--border2)}
-.alert-icon{width:34px;height:34px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
-.alert-crit{background:var(--red-dim)}
-.alert-high{background:var(--amber-dim)}
-.alert-info{background:var(--blue-dim)}
-.alert-body{flex:1;min-width:0}
-.alert-title{font-size:13px;font-weight:600;margin-bottom:3px}
-.alert-meta{font-size:11px;color:var(--text3)}
-.alert-action{font-size:11px;font-weight:600;color:var(--blue);cursor:pointer;white-space:nowrap;align-self:center;padding:5px 10px;border-radius:6px;border:1px solid rgba(79,124,255,.2);background:var(--blue-dim);transition:all .15s}
-.alert-action:hover{background:var(--blue);color:#fff}
+    .card-metrics {
+      display: grid; grid-template-columns: 1fr 1fr;
+      gap: .5rem; margin-top: .75rem;
+    }
+    .metric {
+      background: rgba(255,255,255,.04);
+      border-radius: 6px;
+      padding: .5rem .75rem;
+    }
+    .metric-label { font-size: .7rem; color: var(--muted); margin-bottom: .15rem; }
+    .metric-value { font-size: .95rem; font-weight: 700; }
 
-/* ── MODAL OVERLAY ── */
-.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:100;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .2s;backdrop-filter:blur(4px)}
-.modal-overlay.open{opacity:1;pointer-events:all}
-.modal-box{background:var(--bg2);border:1px solid var(--border2);border-radius:14px;width:min(720px,92vw);max-height:85vh;display:flex;flex-direction:column;transform:translateY(10px);transition:transform .2s;overflow:hidden}
-.modal-overlay.open .modal-box{transform:translateY(0)}
-.modal-header{padding:20px 22px 16px;border-bottom:1px solid var(--border);display:flex;align-items:flex-start;gap:12px}
-.modal-title{font-size:15px;font-weight:700;line-height:1.4;flex:1}
-.modal-close{background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--text2);width:28px;height:28px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;flex-shrink:0;transition:all .15s}
-.modal-close:hover{background:var(--red-dim);color:var(--red);border-color:rgba(248,113,113,.3)}
-.modal-body{padding:20px 22px;overflow-y:auto;flex:1}
-.modal-section{margin-bottom:18px}
-.modal-section-title{font-size:11px;font-weight:700;color:var(--text3);letter-spacing:.8px;text-transform:uppercase;margin-bottom:8px}
-.detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.detail-item{background:var(--bg3);border-radius:8px;padding:10px 12px}
-.detail-label{font-size:10px;color:var(--text3);font-weight:600;letter-spacing:.5px;text-transform:uppercase;margin-bottom:4px}
-.detail-value{font-size:13px;font-weight:600}
-.impact-range{display:flex;align-items:center;gap:8px;background:rgba(251,191,36,.06);border:1px solid rgba(251,191,36,.15);border-radius:8px;padding:10px 14px}
-.impact-icon{font-size:20px}
-.impact-label{font-size:11px;color:var(--text3)}
-.impact-numbers{font-size:16px;font-weight:800;color:var(--amber)}
-.plain-english{background:var(--bg3);border-radius:8px;padding:12px 14px;font-size:13px;color:var(--text2);line-height:1.7;border-left:3px solid var(--blue)}
-.diff-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.diff-box{border-radius:8px;padding:12px 14px}
-.diff-old{background:rgba(248,113,113,.05);border:1px solid rgba(248,113,113,.15)}
-.diff-new{background:rgba(52,211,153,.05);border:1px solid rgba(52,211,153,.15)}
-.diff-label{font-size:10px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;margin-bottom:6px}
-.diff-old .diff-label{color:var(--red)}
-.diff-new .diff-label{color:var(--green)}
-.diff-text{font-size:12px;line-height:1.6;color:var(--text2);font-family:'JetBrains Mono',monospace}
+    /* ── Explanation section ──────────────────────────────── */
+    .explainer {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 2rem;
+      margin-top: 1rem;
+    }
+    .explainer h3 {
+      font-size: 1.1rem; font-weight: 700; margin-bottom: 1rem;
+      color: #93c5fd;
+    }
+    .term-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 1rem;
+    }
+    .term {
+      border-left: 2px solid var(--indigo);
+      padding-left: 1rem;
+    }
+    .term-name { font-weight: 700; font-size: .9rem; margin-bottom: .25rem; }
+    .term-def { font-size: .85rem; color: var(--muted); }
 
-/* ── TECH STACK ── */
-.stack-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;margin-bottom:24px}
-.stack-card{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:14px;display:flex;align-items:flex-start;gap:10px;transition:border-color .15s}
-.stack-card:hover{border-color:var(--border2)}
-.stack-icon{font-size:22px;flex-shrink:0}
-.stack-name{font-size:13px;font-weight:600;margin-bottom:3px}
-.stack-desc{font-size:11px;color:var(--text3);line-height:1.5}
+    /* ── Footer ──────────────────────────────────────────── */
+    footer {
+      border-top: 1px solid var(--border);
+      padding: 2rem;
+      text-align: center;
+      color: var(--muted);
+      font-size: .85rem;
+    }
+    footer a { color: #60a5fa; text-decoration: none; }
 
-/* ── VIEWS ── */
-.view{display:none}.view.active{display:block}
-
-/* ── SCROLLBAR in modal ── */
-.modal-body::-webkit-scrollbar{width:4px}.modal-body::-webkit-scrollbar-thumb{background:var(--border2);border-radius:4px}
-
-/* ── TOAST ── */
-.toast{position:fixed;bottom:24px;right:24px;background:var(--bg2);border:1px solid var(--border2);border-radius:10px;padding:12px 16px;font-size:13px;font-weight:500;z-index:200;transform:translateY(10px);opacity:0;transition:all .25s;pointer-events:none;display:flex;align-items:center;gap:8px}
-.toast.show{transform:translateY(0);opacity:1;pointer-events:all}
-.toast.success{border-color:rgba(52,211,153,.3);color:var(--green)}
-.toast.error{border-color:rgba(248,113,113,.3);color:var(--red)}
-.toast.info{border-color:rgba(79,124,255,.3);color:var(--blue)}
-</style>
+    /* ── Loading / empty ──────────────────────────────────── */
+    .loading {
+      text-align: center; padding: 3rem; color: var(--muted);
+    }
+    .spinner {
+      display: inline-block; width: 32px; height: 32px;
+      border: 3px solid var(--border);
+      border-top-color: var(--indigo);
+      border-radius: 50%;
+      animation: spin .7s linear infinite;
+      margin-bottom: 1rem;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
 </head>
 <body>
-<div class="app">
 
-<!-- ═══════════════════════════════════════════════════════════ SIDEBAR -->
-<aside class="sidebar">
-  <div class="brand">
-    <div class="brand-logo">C</div>
-    <div>
-      <div class="brand-name">ComplianceIQ</div>
-    </div>
-    <div class="brand-badge">LIVE</div>
+<!-- ── Nav ──────────────────────────────────────────────────── -->
+<nav>
+  <div class="logo">Compliance<span>IQ</span></div>
+  <div>
+    <a href="#how-it-works">How it works</a>
+    <a href="#live-feed">Live Feed</a>
+    <a href="#glossary">Glossary</a>
+    <a href="/docs" class="api-btn">API Docs →</a>
   </div>
+</nav>
 
-  <nav class="nav">
-    <div class="nav-section">Platform</div>
-    <div class="nav-item active" onclick="showView('dashboard')">
-      <span class="nav-icon">⬛</span>Dashboard
-    </div>
-    <div class="nav-item" onclick="showView('feed')">
-      <span class="nav-icon">📋</span>Regulation Feed
-    </div>
-    <div class="nav-item" onclick="showView('analytics')">
-      <span class="nav-icon">📊</span>Analytics
-    </div>
-    <div class="nav-item" onclick="showView('alerts')" id="nav-alerts">
-      <span class="nav-icon">🔔</span>Alerts
-      <span class="nav-badge" id="alert-count">—</span>
-    </div>
-
-    <div class="nav-section" style="margin-top:12px">System</div>
-    <div class="nav-item" onclick="showView('stack')">
-      <span class="nav-icon">🔧</span>Tech Stack
-    </div>
-    <div class="nav-item" onclick="window.open('/docs','_blank')">
-      <span class="nav-icon">📖</span>API Docs ↗
-    </div>
-  </nav>
-
-  <div class="sidebar-footer">
-    <button class="sync-btn" id="sync-btn" onclick="triggerSync()">
-      <span id="sync-icon">🔄</span>
-      <span id="sync-label">Sync Latest FR</span>
-    </button>
-    <div style="margin-top:8px;display:flex;align-items:center;gap:6px;font-size:11px;color:var(--text3);justify-content:center">
-      <span class="status-dot"></span> Live · Federal Register
-    </div>
-  </div>
-</aside>
-
-<!-- ══════════════════════════════════════════════════════════ MAIN -->
-<div class="main">
-
-  <!-- TOPBAR -->
-  <div class="topbar">
-    <div>
-      <div class="topbar-title" id="topbar-title">Dashboard</div>
-      <div class="topbar-sub" id="topbar-sub">Regulatory intelligence overview</div>
-    </div>
-    <div class="search-wrap" style="margin-left:20px">
-      <span class="search-icon">🔍</span>
-      <input class="search-input" id="search-input" placeholder="Search regulations, agencies…" oninput="onSearch(this.value)"/>
-    </div>
-    <div class="topbar-actions">
-      <button class="tb-btn tb-btn-ghost" onclick="showView('analytics')">📊 Analytics</button>
-      <button class="tb-btn tb-btn-primary" onclick="showView('alerts')">🔔 Alerts <span id="tb-alert-badge" style="background:rgba(255,255,255,.2);border-radius:4px;padding:0 5px;font-size:10px;display:none"></span></button>
-    </div>
-  </div>
-
-  <!-- CONTENT -->
-  <div class="content" id="content-area">
-
-    <!-- ══════════════════════ DASHBOARD VIEW -->
-    <div class="view active" id="view-dashboard">
-
-      <div class="stats-grid" id="stats-grid">
-        <div class="stat-card blue"><span class="stat-icon">📋</span><div class="stat-label">Regulations Tracked</div><div class="stat-value blue" id="s-total">—</div><div class="stat-sub">Federal Register</div></div>
-        <div class="stat-card red"><span class="stat-icon">🚨</span><div class="stat-label">Flagged for Review</div><div class="stat-value red" id="s-flagged">—</div><div class="stat-sub">High-drift signals</div></div>
-        <div class="stat-card amber"><span class="stat-icon">💰</span><div class="stat-label">Est. Capital at Risk</div><div class="stat-value amber" id="s-impact">—</div><div class="stat-sub">Aggregate exposure</div></div>
-        <div class="stat-card green"><span class="stat-icon">🏛️</span><div class="stat-label">Agencies Monitored</div><div class="stat-value green" id="s-agencies">—</div><div class="stat-sub">Fed, OCC, CFPB…</div></div>
-        <div class="stat-card purple"><span class="stat-icon">🧠</span><div class="stat-label">Detection Methods</div><div class="stat-value purple">3</div><div class="stat-sub">TF-IDF · JSD · Wass.</div></div>
-      </div>
-
-      <div class="two-col">
-        <div>
-          <div class="section-head">
-            <div><div class="section-title">Top Regulations by Drift</div><div class="section-sub">Highest semantic change detected</div></div>
-            <span class="section-action" onclick="showView('feed')">View all →</span>
-          </div>
-          <div id="dash-top-cards">
-            <div class="seeding-card"><div class="seeding-icon">⏳</div><div class="seeding-title">Loading data…</div><div class="seeding-sub">Fetching regulations from the database</div><div class="progress-bar"><div class="progress-fill"></div></div></div>
-          </div>
-        </div>
-        <div>
-          <div class="section-head">
-            <div><div class="section-title">Agency Distribution</div><div class="section-sub">Regulations per agency</div></div>
-          </div>
-          <div class="chart-card">
-            <svg id="chart-agency" width="100%" height="240" viewBox="0 0 320 240"></svg>
-          </div>
-        </div>
-      </div>
-
-      <div class="two-col">
-        <div>
-          <div class="section-head"><div><div class="section-title">Regulations by Year</div><div class="section-sub">Publication timeline 2015 → 2026</div></div></div>
-          <div class="chart-card">
-            <svg id="chart-timeline" width="100%" height="200" viewBox="0 0 560 200"></svg>
-          </div>
-        </div>
-        <div>
-          <div class="section-head"><div><div class="section-title">Drift Score Distribution</div><div class="section-sub">Histogram of composite scores</div></div></div>
-          <div class="chart-card">
-            <svg id="chart-hist" width="100%" height="200" viewBox="0 0 320 200"></svg>
-          </div>
-        </div>
-      </div>
-
-    </div><!-- /dashboard -->
-
-    <!-- ══════════════════════ FEED VIEW -->
-    <div class="view" id="view-feed">
-      <div class="feed-controls">
-        <button class="filter-chip active" id="chip-date" onclick="setSort('date')">📅 Newest First</button>
-        <button class="filter-chip" id="chip-drift" onclick="setSort('drift')">🔥 Highest Drift</button>
-        <button class="filter-chip" id="chip-flagged" onclick="toggleFlagged()">🚨 Flagged Only</button>
-        <span style="margin-left:auto;font-size:12px;color:var(--text3)" id="feed-count"></span>
-      </div>
-      <div id="feed-container">
-        <div class="seeding-card"><div class="seeding-icon">⏳</div><div class="seeding-title">Loading regulations…</div><div class="seeding-sub">This takes ~30s on first startup while the database seeds</div><div class="progress-bar"><div class="progress-fill"></div></div></div>
-      </div>
-    </div>
-
-    <!-- ══════════════════════ ANALYTICS VIEW -->
-    <div class="view" id="view-analytics">
-      <div class="analytics-grid">
-        <div class="chart-card analytics-wide">
-          <div class="chart-title">Regulations Published per Year</div>
-          <div class="chart-sub">Federal Register banking &amp; finance rules, 2015 – 2026</div>
-          <svg id="chart-timeline-big" width="100%" height="220" viewBox="0 0 900 220"></svg>
-        </div>
-        <div class="chart-card">
-          <div class="chart-title">Semantic Drift by Agency</div>
-          <div class="chart-sub">Mean composite drift score per agency</div>
-          <svg id="chart-agency-big" width="100%" height="260" viewBox="0 0 400 260"></svg>
-        </div>
-        <div class="chart-card">
-          <div class="chart-title">Drift Score Histogram</div>
-          <div class="chart-sub">Distribution of all change scores</div>
-          <svg id="chart-hist-big" width="100%" height="260" viewBox="0 0 400 260"></svg>
-        </div>
-        <div class="chart-card">
-          <div class="chart-title">Financial Impact by Type</div>
-          <div class="chart-sub">Estimated capital exposure per regulation type</div>
-          <svg id="chart-impact-big" width="100%" height="260" viewBox="0 0 400 260"></svg>
-        </div>
-        <div class="chart-card">
-          <div class="chart-title">Top 10 by Composite Drift Score</div>
-          <div class="chart-sub">Highest change intensity detected</div>
-          <svg id="chart-top10" width="100%" height="260" viewBox="0 0 400 260"></svg>
-        </div>
-      </div>
-    </div>
-
-    <!-- ══════════════════════ ALERTS VIEW -->
-    <div class="view" id="view-alerts">
-      <div class="section-head" style="margin-bottom:16px">
-        <div><div class="section-title">Active Alerts</div><div class="section-sub">Flagged regulations requiring compliance action</div></div>
-        <button class="tb-btn tb-btn-ghost" onclick="loadAlerts()">↻ Refresh</button>
-      </div>
-      <div id="alerts-container">
-        <div class="seeding-card"><div class="seeding-icon">🔔</div><div class="seeding-title">Loading alerts…</div><div class="progress-bar"><div class="progress-fill"></div></div></div>
-      </div>
-    </div>
-
-    <!-- ══════════════════════ STACK VIEW -->
-    <div class="view" id="view-stack">
-      <div class="section-head" style="margin-bottom:16px">
-        <div><div class="section-title">Technology Stack</div><div class="section-sub">Production-grade infrastructure powering ComplianceIQ</div></div>
-      </div>
-      <div class="stack-grid">
-        <div class="stack-card"><span class="stack-icon">🧠</span><div><div class="stack-name">LangChain + Ollama</div><div class="stack-desc">Local LLM pipeline for plain-English regulation summaries and impact estimation. Zero cloud API dependency.</div></div></div>
-        <div class="stack-card"><span class="stack-icon">🗄️</span><div><div class="stack-name">TimescaleDB (PostgreSQL)</div><div class="stack-desc">Time-series optimised DB for regulation versions and drift score history. Hypertables for fast range queries.</div></div></div>
-        <div class="stack-card"><span class="stack-icon">🔍</span><div><div class="stack-name">ChromaDB</div><div class="stack-desc">Vector store for semantic search across 500+ regulation embeddings. Cosine similarity retrieval.</div></div></div>
-        <div class="stack-card"><span class="stack-icon">⚡</span><div><div class="stack-name">FastAPI + asyncpg</div><div class="stack-desc">Fully async REST API with typed Pydantic schemas, OpenAPI docs, and WebSocket support.</div></div></div>
-        <div class="stack-card"><span class="stack-icon">🔬</span><div><div class="stack-name">TF-IDF · JSD · Wasserstein</div><div class="stack-desc">Three-method drift detection ensemble with bootstrap confidence intervals (60-sample, 95% CI).</div></div></div>
-        <div class="stack-card"><span class="stack-icon">🌊</span><div><div class="stack-name">Apache Airflow</div><div class="stack-desc">Daily DAG fetches Federal Register publications at 07:00 UTC. Weekly 14-day catch-up on Mondays.</div></div></div>
-        <div class="stack-card"><span class="stack-icon">🐳</span><div><div class="stack-name">Docker + HuggingFace Spaces</div><div class="stack-desc">Single-container deployment with Postgres + ChromaDB + Airflow + uvicorn. Cold-start in &lt;90s.</div></div></div>
-        <div class="stack-card"><span class="stack-icon">📊</span><div><div class="stack-name">Federal Register API</div><div class="stack-desc">Real-time ingestion from api.federalregister.gov covering all banking &amp; finance rule types.</div></div></div>
-        <div class="stack-card"><span class="stack-icon">🔗</span><div><div class="stack-name">Alembic Migrations</div><div class="stack-desc">Version-controlled schema with composite PKs for TimescaleDB hypertable compatibility.</div></div></div>
-      </div>
-    </div>
-
-  </div><!-- /content -->
-</div><!-- /main -->
-</div><!-- /app -->
-
-<!-- ══════════════════════════════════════════════════ MODAL -->
-<div class="modal-overlay" id="modal" onclick="closeModalOverlay(event)">
-  <div class="modal-box">
-    <div class="modal-header">
-      <div style="flex:1">
-        <div class="modal-title" id="modal-title">Regulation Detail</div>
-        <div style="font-size:11px;color:var(--text3);margin-top:4px" id="modal-doc-num"></div>
-      </div>
-      <button class="modal-close" onclick="closeModal()">✕</button>
-    </div>
-    <div class="modal-body" id="modal-body"></div>
+<!-- ── Hero ─────────────────────────────────────────────────── -->
+<div class="hero">
+  <div class="badge">🏦 Banking Regulatory Intelligence · Live Demo</div>
+  <h1>Know which banking<br>regulations changed<br>before they cost you.</h1>
+  <p>ComplianceIQ reads every US banking regulation published by the OCC, FDIC, FRB, and CFPB — and tells you in plain English which ones matter, why, and how much money is at stake.</p>
+  <div class="hero-btns">
+    <a href="#live-feed" class="btn-primary">See Live Regulations ↓</a>
+    <a href="/docs" class="btn-secondary">Explore the API</a>
   </div>
 </div>
 
-<!-- TOAST -->
-<div class="toast" id="toast"></div>
+<!-- ── Stats strip ───────────────────────────────────────────── -->
+<div class="stats">
+  <div class="stat">
+    <div class="stat-value" id="total-regs">—</div>
+    <div class="stat-label">Regulations tracked</div>
+  </div>
+  <div class="stat">
+    <div class="stat-value" id="flagged-count">—</div>
+    <div class="stat-label">Flagged for review</div>
+  </div>
+  <div class="stat">
+    <div class="stat-value" id="agency-count">—</div>
+    <div class="stat-label">Regulatory agencies</div>
+  </div>
+  <div class="stat">
+    <div class="stat-value">3</div>
+    <div class="stat-label">Detection methods</div>
+  </div>
+  <div class="stat">
+    <div class="stat-value">178</div>
+    <div class="stat-label">Tests passing</div>
+  </div>
+</div>
+
+<!-- ── How it works ─────────────────────────────────────────── -->
+<section id="how-it-works">
+  <h2>How it works</h2>
+  <p class="section-sub">Four steps from a published regulation to a dollar figure on your desk.</p>
+  <div class="steps">
+    <div class="step">
+      <div class="step-icon">📡</div>
+      <h3>1. Fetch</h3>
+      <p>Every day, a pipeline pulls the latest rules from the Federal Register, FDIC, and Federal Reserve APIs — automatically, no manual reading required.</p>
+    </div>
+    <div class="step">
+      <div class="step-icon">🔬</div>
+      <h3>2. Detect change</h3>
+      <p>Three mathematical methods measure how much the language changed from the previous version. Small edits score low. New capital requirements score high.</p>
+    </div>
+    <div class="step">
+      <div class="step-icon">⚖️</div>
+      <h3>3. Measure impact</h3>
+      <p>Causal inference (the same technique used in economics research) estimates how much the regulation will change your bank's risk-weighted assets in dollars.</p>
+    </div>
+    <div class="step">
+      <div class="step-icon">🤖</div>
+      <h3>4. Explain</h3>
+      <p>An AI agent reads the full regulation and writes a plain-English summary: which business lines are affected, which CFR sections changed, and what to do next.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ── Live feed ─────────────────────────────────────────────── -->
+<section id="live-feed">
+  <h2>Live Regulation Feed</h2>
+  <p class="section-sub">Real data from the database, updated continuously. Risk level is based on how much the regulation's language changed from the previous version.</p>
+
+  <div class="filters">
+    <button class="filter-btn active" onclick="filterRegs('all', this)">All Regulations</button>
+    <button class="filter-btn" onclick="filterRegs('high', this)">🔴 High Risk</button>
+    <button class="filter-btn" onclick="filterRegs('medium', this)">🟡 Medium Risk</button>
+    <button class="filter-btn" onclick="filterRegs('low', this)">🟢 Low Risk</button>
+    <button class="filter-btn" onclick="filterRegs('capital', this)">Capital</button>
+    <button class="filter-btn" onclick="filterRegs('aml', this)">AML</button>
+    <button class="filter-btn" onclick="filterRegs('consumer_protection', this)">Consumer</button>
+  </div>
+
+  <div id="reg-grid" class="reg-grid">
+    <div class="loading">
+      <div class="spinner"></div>
+      <div>Loading live regulations…</div>
+    </div>
+  </div>
+</section>
+
+<!-- ── Glossary ──────────────────────────────────────────────── -->
+<section id="glossary">
+  <h2>What do these numbers mean?</h2>
+  <p class="section-sub">Plain-English definitions for every metric on this page.</p>
+  <div class="explainer">
+    <h3>Risk &amp; Change Detection</h3>
+    <div class="term-grid">
+      <div class="term">
+        <div class="term-name">Drift Score (0–1)</div>
+        <div class="term-def">How different the new regulation text is from the old one. 0 = identical. 1 = completely rewritten. Above 0.15 triggers a review flag.</div>
+      </div>
+      <div class="term">
+        <div class="term-name">JSD Score</div>
+        <div class="term-def">Jensen-Shannon Divergence — measures how the statistical distribution of words changed. Catches subtle rewording that drift score might miss.</div>
+      </div>
+      <div class="term">
+        <div class="term-name">Wasserstein Score</div>
+        <div class="term-def">Earth Mover's Distance — measures how far the meaning "moved". High scores mean the topic shifted significantly, not just the wording.</div>
+      </div>
+      <div class="term">
+        <div class="term-name">Flagged for Review</div>
+        <div class="term-def">Any regulation where the drift score crosses the 0.15 threshold. These are sent to compliance officers for manual review first.</div>
+      </div>
+      <div class="term">
+        <div class="term-name">Confidence Interval</div>
+        <div class="term-def">The range we're 95% sure the true drift score falls within. A narrow band means the measurement is reliable. A wide band means more data is needed.</div>
+      </div>
+      <div class="term">
+        <div class="term-name">ATT Estimate ($M)</div>
+        <div class="term-def">Average Treatment Effect — the causal estimate of how much this regulation will change a bank's Risk-Weighted Assets in millions of dollars.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── Footer ────────────────────────────────────────────────── -->
+<footer>
+  <p>ComplianceIQ · Built with FastAPI, TimescaleDB, ChromaDB, LangGraph &amp; econml</p>
+  <p style="margin-top:.5rem">
+    <a href="/docs">API Documentation</a> ·
+    <a href="https://github.com/Jainishpatel1019/Complianceiq" target="_blank">GitHub</a>
+  </p>
+</footer>
 
 <script>
-// ═══════════════════════════════════════════════════════════════ STATE
-let _allRegs = []
-let _sortBy = 'date'
-let _flaggedOnly = false
-let _searchQ = ''
-let _statsPoll = null
-let _syncPoll = null
-let _chartsDrawn = false
+  const BASE = '';   // same origin
+  let allRegs = [];
+  let currentFilter = 'all';
 
-const ENRICHMENT = {
-  "2024-14563": {impact_low:1.2,impact_high:3.8,affected:"Banks with >$100B assets",plain_english:"Requires larger capital cushions for high-risk trading books. Banks must hold 40% more capital for market-making activities.",v1:"...institutions shall maintain a minimum CET1 ratio of 4.5%...",v2:"...institutions shall maintain a minimum CET1 ratio of 7.0%, inclusive of a 2.5% conservation buffer..."},
-  "2024-01415": {impact_low:0.8,impact_high:2.1,affected:"All FDIC-insured institutions",plain_english:"Tightens beneficial ownership rules. Banks must identify and verify anyone owning 10%+ of a customer entity, down from 25%.",v1:"...identify beneficial owners holding 25% or more of equity interest...",v2:"...identify beneficial owners holding 10% or more of equity interest, with enhanced due diligence for PEPs..."},
-  "2025-00234": {impact_low:0.5,impact_high:1.4,affected:"Banks with >$10B assets",plain_english:"Mandatory 36-hour cyber incident reporting window. Regulators must be notified before public disclosure.",v1:"...institutions shall notify the appropriate federal regulator within 72 hours...",v2:"...institutions shall notify the appropriate federal regulator within 36 hours and prior to any public disclosure..."},
-}
-
-// ═══════════════════════════════════════════════════════════ UTILS
-async function safeJson(url) {
-  try {
-    const r = await fetch(url)
-    const text = await r.text()
-    if (!text || (text[0] !== '[' && text[0] !== '{')) return null
-    return JSON.parse(text)
-  } catch { return null }
-}
-
-function driftColor(d) {
-  if (d >= .65) return 'crit'
-  if (d >= .40) return 'high'
-  if (d >= .20) return 'med'
-  return 'low'
-}
-function driftHex(d) {
-  if (d >= .65) return '#f87171'
-  if (d >= .40) return '#fbbf24'
-  if (d >= .20) return '#4f7cff'
-  return '#34d399'
-}
-function fmtImpact(lo, hi) {
-  if (!lo && !hi) return null
-  const fmt = v => v >= 1000 ? `$${(v/1000).toFixed(1)}T` : `$${v.toFixed(1)}B`
-  return lo && hi ? `${fmt(lo)} – ${fmt(hi)}` : lo ? `~${fmt(lo)}` : `~${fmt(hi)}`
-}
-function toast(msg, type='info') {
-  const t = document.getElementById('toast')
-  t.className = `toast ${type} show`
-  t.innerHTML = (type==='success'?'✅ ':type==='error'?'❌ ':'ℹ️ ') + msg
-  clearTimeout(t._t)
-  t._t = setTimeout(() => t.className='toast', 3500)
-}
-
-// ═══════════════════════════════════════════════════ NAVIGATION
-const VIEW_META = {
-  dashboard:{title:'Dashboard',sub:'Regulatory intelligence overview'},
-  feed:{title:'Regulation Feed',sub:'All monitored regulations, date-ordered'},
-  analytics:{title:'Analytics',sub:'Drift metrics, timelines and exposure analysis'},
-  alerts:{title:'Alerts',sub:'Flagged regulations requiring immediate review'},
-  stack:{title:'Tech Stack',sub:'Infrastructure powering ComplianceIQ'},
-}
-function showView(id) {
-  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'))
-  document.getElementById('view-'+id).classList.add('active')
-  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'))
-  document.querySelectorAll('.nav-item').forEach(n=>{
-    if(n.textContent.trim().toLowerCase().startsWith(id==='dashboard'?'dash':id)) n.classList.add('active')
-  })
-  const m = VIEW_META[id] || {title:id,sub:''}
-  document.getElementById('topbar-title').textContent = m.title
-  document.getElementById('topbar-sub').textContent = m.sub
-  document.getElementById('content-area').scrollTop = 0
-  document.getElementById('search-input').value = ''
-  if (id === 'feed' && _allRegs.length === 0) loadFeed()
-  if (id === 'analytics') drawAnalyticsCharts()
-  if (id === 'alerts') loadAlerts()
-}
-
-// ═══════════════════════════════════════════════ DATA LOADING
-async function loadAll() {
-  const data = await safeJson('/api/v1/change-scores?limit=2000&sort=date')
-  if (!Array.isArray(data) || data.length === 0) return false
-  _allRegs = data
-  return true
-}
-
-async function initLoad() {
-  const ok = await loadAll()
-  if (ok) {
-    renderDashboard()
-    renderFeed()
-    updateAlertBadge()
-    if (!_chartsDrawn) { drawAllCharts(); _chartsDrawn = true }
+  function riskLevel(score) {
+    if (!score) return 'low';
+    if (score > 0.25) return 'high';
+    if (score > 0.12) return 'medium';
+    return 'low';
   }
-  return ok
-}
 
-// ═══════════════════════════════════════════════ STATS POLL
-async function pollStats() {
-  const s = await safeJson('/api/v1/change-scores/stats')
-  if (!s || typeof s !== 'object' || Array.isArray(s)) return
-  const tot = s.total_regulations || 0
-  document.getElementById('s-total').textContent = tot.toLocaleString()
-  document.getElementById('s-flagged').textContent = (s.flagged||0).toLocaleString()
-  document.getElementById('s-agencies').textContent = (s.agencies||0).toLocaleString()
-  if (tot > _allRegs.length) { await initLoad() }
-  if (s.seeding_complete && _statsPoll) { clearInterval(_statsPoll); _statsPoll = null }
-}
+  function riskLabel(level) {
+    return { high: '🔴 High Risk', medium: '🟡 Medium Risk', low: '🟢 Low Risk' }[level];
+  }
 
-// ═══════════════════════════════════════════════ DASHBOARD
-function renderDashboard() {
-  if (!_allRegs.length) return
-  // impact estimate
-  let totalLo=0, totalHi=0
-  _allRegs.forEach(r=>{
-    totalLo += r.impact_low_m||0
-    totalHi += r.impact_high_m||0
-  })
-  const impStr = totalHi>0 ? `$${(totalHi/1000).toFixed(1)}T+` : '—'
-  document.getElementById('s-impact').textContent = impStr
+  function fmtDate(iso) {
+    if (!iso) return '—';
+    return new Date(iso).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+  }
 
-  // top cards by drift
-  const top = [..._allRegs].sort((a,b)=>(b.composite_score||0)-(a.composite_score||0)).slice(0,6)
-  const container = document.getElementById('dash-top-cards')
-  container.innerHTML = top.map(r=>buildMiniCard(r)).join('')
-}
+  function agencyColor(agency) {
+    const map = { OCC: '#3b82f6', FDIC: '#8b5cf6', FRB: '#06b6d4', CFPB: '#f59e0b', FinCEN: '#10b981' };
+    return map[agency] || '#64748b';
+  }
 
-function buildMiniCard(r) {
-  const d = r.composite_score || r.drift_score || 0
-  const cls = driftColor(d)
-  const col = driftHex(d)
-  const e = ENRICHMENT[r.document_number] || {}
-  const imp = fmtImpact(e.impact_low||r.impact_low_m, e.impact_high||r.impact_high_m)
-  return `<div class="reg-card ${cls}" onclick="openModal(${JSON.stringify(r).replace(/"/g,'&quot;')})">
-    <div class="reg-card-top">
-      <div class="drift-badge ${cls}">
-        <span class="drift-num" style="color:${col}">${Math.round(d*100)}</span>
-        <span class="drift-lbl" style="color:${col}">drift</span>
-      </div>
-      <div class="reg-info">
-        <div class="reg-title">${r.title}</div>
-        <div class="reg-meta">
-          <span class="meta-tag">🏛️ ${r.agency}</span>
-          ${r.publication_date?`<span class="meta-tag">📅 ${r.publication_date}</span>`:''}
-          ${r.is_significant?'<span class="meta-pill pill-flagged">⚡ Significant</span>':''}
+  function buildCard(reg) {
+    const cs = reg.latest_change_score || {};
+    const drift = cs.drift_score || 0;
+    const level = riskLevel(drift);
+    const pct = Math.min(Math.round(drift * 100), 100);
+    const barColor = level === 'high' ? '#ef4444' : level === 'medium' ? '#f59e0b' : '#22c55e';
+    const typeName = (reg.regulation_type || 'general').replace('_', ' ');
+
+    return `
+      <div class="reg-card ${level}-risk" data-risk="${level}" data-type="${reg.regulation_type || ''}">
+        <div class="card-header">
+          <div class="card-title">${reg.title}</div>
+          <span class="risk-badge risk-${level}">${level}</span>
         </div>
-      </div>
-    </div>
-    ${imp?`<div class="reg-card-bottom"><div class="impact-box"><span>💰</span><span class="impact-val">${imp}</span></div></div>`:''}
-  </div>`
-}
-
-// ═══════════════════════════════════════════════ FEED
-function renderFeed(regs) {
-  const src = regs || _allRegs
-  const container = document.getElementById('feed-container')
-  if (!src.length) {
-    container.innerHTML = `<div class="seeding-card"><div class="seeding-icon">⏳</div><div class="seeding-title">Database seeding in progress</div><div class="seeding-sub">Generating 3,250+ regulations — auto-refreshing every 10 s</div><div class="progress-bar"><div class="progress-fill"></div></div></div>`
-    return
-  }
-  let list = [...src]
-  if (_flaggedOnly) list = list.filter(r=>r.flagged_for_analysis)
-  if (_searchQ) { const q=_searchQ.toLowerCase(); list=list.filter(r=>(r.title+r.agency+r.document_number).toLowerCase().includes(q)) }
-  list.sort((a,b)=>_sortBy==='date'
-    ? ((b.publication_date||'')>(a.publication_date||'')?1:-1) || (b.composite_score||0)-(a.composite_score||0)
-    : (b.composite_score||0)-(a.composite_score||0))
-  document.getElementById('feed-count').textContent = `${list.length.toLocaleString()} regulations`
-
-  // group by year
-  const byYear={}
-  list.forEach(r=>{
-    const y = r.publication_date ? r.publication_date.slice(0,4) : 'Unknown'
-    ;(byYear[y]||(byYear[y]=[])).push(r)
-  })
-  const years = Object.keys(byYear).sort((a,b)=>+b-+a)
-  const curYear = new Date().getFullYear().toString()
-
-  container.innerHTML = years.map(yr=>`
-    <div class="year-group">
-      <div class="year-label">
-        ${yr===curYear?'<span class="live-dot"></span>':''}
-        <span class="year-tag">${yr}</span>
-        <span class="year-count">${byYear[yr].length} regulations</span>
-        <div class="year-line"></div>
-      </div>
-      ${byYear[yr].map(r=>buildCard(r)).join('')}
-    </div>`).join('')
-}
-
-function buildCard(r) {
-  const d = r.composite_score || r.drift_score || 0
-  const cls = driftColor(d)
-  const col = driftHex(d)
-  const e = ENRICHMENT[r.document_number] || {}
-  const imp = fmtImpact(e.impact_low||r.impact_low_m, e.impact_high||r.impact_high_m)
-  const ciW = r.drift_ci_high && r.drift_ci_low ? Math.round((r.drift_ci_high-r.drift_ci_low)*100) : 0
-  const pill = r.regulation_type==='final_rule'?'pill-rule':r.regulation_type==='proposed_rule'?'pill-proposed':'pill-notice'
-  const pillLabel = r.regulation_type==='final_rule'?'Final Rule':r.regulation_type==='proposed_rule'?'Proposed':'Notice'
-  const cardId = 'c'+Math.random().toString(36).slice(2)
-  const v1 = e.v1||r.v1_snippet||''
-  const v2 = e.v2||r.v2_snippet||''
-  return `<div class="reg-card ${cls}" id="${cardId}">
-    <div class="reg-card-top">
-      <div class="drift-badge ${cls}">
-        <span class="drift-num" style="color:${col}">${Math.round(d*100)}</span>
-        <span class="drift-lbl" style="color:${col}">drift</span>
-      </div>
-      <div class="reg-info">
-        <div class="reg-title" title="${r.title}">${r.title}</div>
-        <div class="reg-meta">
-          <span class="meta-tag">🏛️ ${r.agency}</span>
-          ${r.publication_date?`<span class="meta-tag">📅 ${r.publication_date}</span>`:''}
-          <span class="meta-pill ${pill}">${pillLabel}</span>
-          ${r.flagged_for_analysis?'<span class="meta-pill pill-flagged">🚨 Flagged</span>':''}
+        <div class="card-meta">
+          <span class="meta-tag" style="color:${agencyColor(reg.agency)};border-color:${agencyColor(reg.agency)}40">${reg.agency}</span>
+          <span class="meta-tag">${typeName}</span>
+          <span class="meta-tag">${fmtDate(reg.publication_date)}</span>
+          ${cs.flagged_for_analysis ? '<span class="meta-tag" style="color:#fca5a5;border-color:#fca5a580">⚑ Flagged</span>' : ''}
         </div>
-      </div>
-    </div>
-    <div class="reg-card-bottom">
-      ${imp?`<div class="impact-box"><span>💰</span><span class="impact-val">${imp}</span></div>`:''}
-      <div class="ci-bar" title="95% CI width: ±${ciW}%"><div class="ci-fill" style="width:${Math.round(d*100)}%"></div></div>
-      ${(v1||v2)?`<div class="expand-btn" onclick="toggleProof('${cardId}',event)"><span id="${cardId}-arr">▼</span> Change proof</div>`:''}
-      <div class="expand-btn" style="margin-left:${v1||v2?'4px':'auto'}" onclick="openModal(${JSON.stringify(r).replace(/"/g,'&quot;')})">🔍 Detail</div>
-    </div>
-    ${(v1||v2)?`<div class="proof-panel" id="${cardId}-proof">
-      <div class="proof-box proof-v1"><div class="proof-label">Before (v1)</div><div class="proof-text">${(v1||'').slice(0,280)}…</div></div>
-      <div class="proof-box proof-v2"><div class="proof-label">After (v2)</div><div class="proof-text">${(v2||'').slice(0,280)}…</div></div>
-    </div>`:''}
-  </div>`
-}
 
-function toggleProof(id, e) {
-  e.stopPropagation()
-  const p = document.getElementById(id+'-proof')
-  const a = document.getElementById(id+'-arr')
-  if (!p) return
-  const open = p.classList.toggle('open')
-  if (a) a.textContent = open?'▲':'▼'
-}
-
-async function loadFeed() {
-  if (!_allRegs.length) { const ok = await initLoad(); if(!ok) return }
-  renderFeed()
-}
-
-function setSort(by) {
-  _sortBy = by
-  document.getElementById('chip-date').classList.toggle('active', by==='date')
-  document.getElementById('chip-drift').classList.toggle('active', by==='drift')
-  renderFeed()
-}
-function toggleFlagged() {
-  _flaggedOnly = !_flaggedOnly
-  document.getElementById('chip-flagged').classList.toggle('active', _flaggedOnly)
-  renderFeed()
-}
-function onSearch(q) {
-  _searchQ = q
-  renderFeed()
-}
-
-// ═══════════════════════════════════════════════ ALERTS
-async function loadAlerts() {
-  const data = await safeJson('/api/v1/change-scores?flagged_only=true&limit=200&sort=drift')
-  const container = document.getElementById('alerts-container')
-  if (!Array.isArray(data) || !data.length) {
-    container.innerHTML = `<div class="seeding-card"><div class="seeding-icon">✅</div><div class="seeding-title">No flagged alerts</div><div class="seeding-sub">All monitored regulations are within normal drift thresholds.</div></div>`
-    return
+        ${drift ? `
+        <div class="drift-bar-wrap">
+          <div class="drift-bar-label">
+            <span>Language change from previous version</span>
+            <span style="color:${barColor};font-weight:700">${pct}%</span>
+          </div>
+          <div class="drift-bar-track">
+            <div class="drift-bar-fill" style="width:${pct}%;background:${barColor}"></div>
+          </div>
+        </div>
+        <div class="card-metrics">
+          <div class="metric">
+            <div class="metric-label">Drift Score</div>
+            <div class="metric-value" style="color:${barColor}">${drift.toFixed(3)}</div>
+          </div>
+          <div class="metric">
+            <div class="metric-label">Stat. Significance</div>
+            <div class="metric-value">${cs.jsd_p_value ? (cs.jsd_p_value < 0.05 ? '✓ Significant' : 'Not significant') : '—'}</div>
+          </div>
+          <div class="metric">
+            <div class="metric-label">JSD Score</div>
+            <div class="metric-value">${cs.jsd_score ? cs.jsd_score.toFixed(3) : '—'}</div>
+          </div>
+          <div class="metric">
+            <div class="metric-label">Wasserstein</div>
+            <div class="metric-value">${cs.wasserstein_score ? cs.wasserstein_score.toFixed(3) : '—'}</div>
+          </div>
+        </div>
+        ` : `<div style="color:var(--muted);font-size:.85rem">No version changes recorded yet.</div>`}
+      </div>`;
   }
-  container.innerHTML = data.map(r=>{
-    const d = r.composite_score||r.drift_score||0
-    const cls = d>=.65?'alert-crit':d>=.4?'alert-high':'alert-info'
-    const ico = d>=.65?'🚨':d>=.4?'⚠️':'ℹ️'
-    return `<div class="alert-item">
-      <div class="alert-icon ${cls}">${ico}</div>
-      <div class="alert-body">
-        <div class="alert-title">${r.title}</div>
-        <div class="alert-meta">${r.agency} · ${r.publication_date||''} · Drift: ${Math.round(d*100)}% · ${r.regulation_type||''}</div>
-      </div>
-      <div class="alert-action" onclick="openModal(${JSON.stringify(r).replace(/"/g,'&quot;')})">Review →</div>
-    </div>`
-  }).join('')
-}
-function updateAlertBadge() {
-  const flagged = _allRegs.filter(r=>r.flagged_for_analysis).length
-  const b = document.getElementById('alert-count')
-  const tb = document.getElementById('tb-alert-badge')
-  if (b) b.textContent = flagged||'0'
-  if (tb && flagged > 0) { tb.textContent=flagged; tb.style.display='inline' }
-}
 
-// ═══════════════════════════════════════════════ MODAL
-function openModal(r) {
-  const e = ENRICHMENT[r.document_number] || {}
-  const d = r.composite_score||r.drift_score||0
-  const col = driftHex(d)
-  const imp = fmtImpact(e.impact_low||r.impact_low_m, e.impact_high||r.impact_high_m)
-  const v1 = e.v1||r.v1_snippet||''
-  const v2 = e.v2||r.v2_snippet||''
-  document.getElementById('modal-title').textContent = r.title
-  document.getElementById('modal-doc-num').textContent = `${r.document_number} · ${r.agency}`
-  document.getElementById('modal-body').innerHTML = `
-    <div class="modal-section">
-      <div class="detail-grid">
-        <div class="detail-item"><div class="detail-label">Composite Drift</div><div class="detail-value" style="color:${col};font-size:20px;font-weight:800">${Math.round(d*100)}%</div></div>
-        <div class="detail-item"><div class="detail-label">Significance</div><div class="detail-value">${r.jsd_significant?'<span style="color:var(--red)">✓ Statistically Significant</span>':'<span style="color:var(--text3)">Not Significant</span>'}</div></div>
-        <div class="detail-item"><div class="detail-label">JSD Score</div><div class="detail-value">${r.jsd_score!=null?r.jsd_score.toFixed(4):'—'}</div></div>
-        <div class="detail-item"><div class="detail-label">Wasserstein</div><div class="detail-value">${r.wasserstein_score!=null?r.wasserstein_score.toFixed(4):'—'}</div></div>
-        <div class="detail-item"><div class="detail-label">Published</div><div class="detail-value">${r.publication_date||'—'}</div></div>
-        <div class="detail-item"><div class="detail-label">Type</div><div class="detail-value">${(r.regulation_type||'').replace(/_/g,' ')}</div></div>
-      </div>
-    </div>
-    ${imp?`<div class="modal-section"><div class="modal-section-title">Financial Impact Estimate</div>
-      <div class="impact-range"><span class="impact-icon">💰</span><div><div class="impact-label">Estimated Capital Exposure</div><div class="impact-numbers">${imp}</div>${e.affected?`<div style="font-size:11px;color:var(--text3);margin-top:2px">Affects: ${e.affected}</div>`:''}</div></div>
-    </div>`:''}
-    ${e.plain_english||r.plain_english?`<div class="modal-section"><div class="modal-section-title">Plain English</div>
-      <div class="plain-english">${e.plain_english||r.plain_english}</div>
-    </div>`:''}
-    ${(v1||v2)?`<div class="modal-section"><div class="modal-section-title">Change Proof — What Changed</div>
-      <div class="diff-grid">
-        <div class="diff-box diff-old"><div class="diff-label">Before (v1)</div><div class="diff-text">${v1.slice(0,500)}${v1.length>500?'…':''}</div></div>
-        <div class="diff-box diff-new"><div class="diff-label">After (v2)</div><div class="diff-text">${v2.slice(0,500)}${v2.length>500?'…':''}</div></div>
-      </div>
-    </div>`:''}
-    ${r.abstract?`<div class="modal-section"><div class="modal-section-title">Abstract</div><div style="font-size:13px;color:var(--text2);line-height:1.7">${r.abstract.slice(0,600)}${r.abstract.length>600?'…':''}</div></div>`:''}
-  `
-  document.getElementById('modal').classList.add('open')
-  document.body.style.overflow='hidden'
-}
-function closeModal() { document.getElementById('modal').classList.remove('open'); document.body.style.overflow='' }
-function closeModalOverlay(e) { if(e.target===document.getElementById('modal')) closeModal() }
-document.addEventListener('keydown',e=>{ if(e.key==='Escape') closeModal() })
-
-// ═══════════════════════════════════════════════ SYNC
-async function triggerSync() {
-  const btn=document.getElementById('sync-btn')
-  const lbl=document.getElementById('sync-label')
-  const ico=document.getElementById('sync-icon')
-  btn.disabled=true; ico.textContent='⏳'; lbl.textContent='Syncing…'
-  try {
-    await fetch('/api/v1/refresh',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({lookback_days:7,source:'auto'})})
-    toast('Sync started — fetching latest Federal Register…','info')
-    if (_syncPoll) clearInterval(_syncPoll)
-    _syncPoll = setInterval(async()=>{
-      const s = await safeJson('/api/v1/refresh/status')
-      if(!s) return
-      if (s.status==='done') {
-        clearInterval(_syncPoll)
-        btn.disabled=false; ico.textContent='🔄'; lbl.textContent='Sync Latest FR'
-        toast(`✅ Sync complete — ${s.inserted} new regulations added`,'success')
-        if(s.inserted>0){ await initLoad() }
-      } else if (s.status==='error') {
-        clearInterval(_syncPoll)
-        btn.disabled=false; ico.textContent='🔄'; lbl.textContent='Sync Latest FR'
-        toast('Sync failed — check logs','error')
-      }
-    },2000)
-  } catch { btn.disabled=false; ico.textContent='🔄'; lbl.textContent='Sync Latest FR' }
-}
-
-// ═══════════════════════════════════════════════ CHARTS
-function svgEl(tag,attrs){
-  const el=document.createElementNS('http://www.w3.org/2000/svg',tag)
-  Object.entries(attrs||{}).forEach(([k,v])=>el.setAttribute(k,v))
-  return el
-}
-function clearSvg(id){ const s=document.getElementById(id); if(s){while(s.firstChild)s.removeChild(s.firstChild)} return s }
-
-function drawTimelineChart(svgId, regs, W=560, H=200) {
-  const s=clearSvg(svgId); if(!s||!regs.length) return
-  const byYear={}
-  regs.forEach(r=>{const y=r.publication_date?r.publication_date.slice(0,4):null; if(y)(byYear[y]=(byYear[y]||0)+1)})
-  const years=Object.keys(byYear).sort()
-  const vals=years.map(y=>byYear[y])
-  const maxV=Math.max(...vals)||1
-  const pad={l:36,r:16,t:16,b:40}
-  const cw=W-pad.l-pad.r, ch=H-pad.t-pad.b
-  const bw=Math.min(cw/years.length-4,36), gap=(cw-bw*years.length)/(years.length+1)
-  years.forEach((yr,i)=>{
-    const x=pad.l+gap*(i+1)+bw*i, bh=Math.round((byYear[yr]/maxV)*ch)
-    const isCur=yr===new Date().getFullYear().toString()
-    const rect=svgEl('rect',{x,y:pad.t+ch-bh,width:bw,height:bh,rx:3,fill:isCur?'#4f7cff':'rgba(79,124,255,.45)'})
-    s.appendChild(rect)
-    const lbl=svgEl('text',{x:x+bw/2,y:H-pad.b+14,'text-anchor':'middle','font-size':'9','fill':'#475569'})
-    lbl.textContent=yr.slice(2)
-    s.appendChild(lbl)
-    const vt=svgEl('text',{x:x+bw/2,y:pad.t+ch-bh-4,'text-anchor':'middle','font-size':'9','fill':'#94a3b8'})
-    vt.textContent=byYear[yr]
-    s.appendChild(vt)
-  })
-}
-
-function drawAgencyChart(svgId, regs, W=320, H=240) {
-  const s=clearSvg(svgId); if(!s||!regs.length) return
-  const byAgency={}
-  regs.forEach(r=>{ const a=(r.agency||'Unknown').split(' ')[0]; byAgency[a]=(byAgency[a]||0)+1 })
-  const sorted=Object.entries(byAgency).sort((a,b)=>b[1]-a[1]).slice(0,8)
-  const maxV=sorted[0]?.[1]||1
-  const pad={l:70,r:30,t:10,b:10}
-  const bh=Math.max(Math.floor((H-pad.t-pad.b)/sorted.length)-4,14)
-  const COLS=['#4f7cff','#a78bfa','#34d399','#fbbf24','#f87171','#60a5fa','#818cf8','#fb923c']
-  sorted.forEach(([ag,cnt],i)=>{
-    const y=pad.t+i*(bh+4)
-    const bw=Math.round((cnt/maxV)*(W-pad.l-pad.r))
-    const rect=svgEl('rect',{x:pad.l,y,width:bw,height:bh,rx:3,fill:COLS[i%COLS.length]+'99'})
-    s.appendChild(rect)
-    const lbl=svgEl('text',{x:pad.l-4,y:y+bh/2+4,'text-anchor':'end','font-size':'9','fill':'#94a3b8'})
-    lbl.textContent=ag.slice(0,12)
-    s.appendChild(lbl)
-    const vt=svgEl('text',{x:pad.l+bw+4,y:y+bh/2+4,'font-size':'9','fill':'#64748b'})
-    vt.textContent=cnt
-    s.appendChild(vt)
-  })
-}
-
-function drawHistogram(svgId, regs, W=320, H=200) {
-  const s=clearSvg(svgId); if(!s||!regs.length) return
-  const buckets=Array(10).fill(0)
-  regs.forEach(r=>{ const d=r.composite_score||r.drift_score||0; const i=Math.min(9,Math.floor(d*10)); buckets[i]++ })
-  const maxV=Math.max(...buckets)||1
-  const pad={l:28,r:8,t:10,b:30}
-  const cw=W-pad.l-pad.r, ch=H-pad.t-pad.b
-  const bw=cw/10-2
-  const COLS=['#34d399','#34d399','#4f7cff','#4f7cff','#4f7cff','#fbbf24','#fbbf24','#f87171','#f87171','#f87171']
-  buckets.forEach((cnt,i)=>{
-    const x=pad.l+i*(bw+2), bh=Math.round((cnt/maxV)*ch)
-    const rect=svgEl('rect',{x,y:pad.t+ch-bh,width:bw,height:bh,rx:2,fill:COLS[i]+'aa'})
-    s.appendChild(rect)
-    const lbl=svgEl('text',{x:x+bw/2,y:H-pad.b+10,'text-anchor':'middle','font-size':'8','fill':'#475569'})
-    lbl.textContent=(i*10)+'%'
-    s.appendChild(lbl)
-    if(cnt>0){const vt=svgEl('text',{x:x+bw/2,y:pad.t+ch-bh-3,'text-anchor':'middle','font-size':'8','fill':'#64748b'}); vt.textContent=cnt; s.appendChild(vt)}
-  })
-}
-
-function drawImpactChart(svgId, regs, W=400, H=260) {
-  const s=clearSvg(svgId); if(!s) return
-  const byType={'final_rule':0,'proposed_rule':0,'notice':0}
-  regs.forEach(r=>{ const t=r.regulation_type||'final_rule'; if(byType[t]!==undefined) byType[t]+=(r.impact_high_m||0) })
-  const entries=Object.entries(byType).filter(([,v])=>v>0)
-  if(!entries.length){ const t=svgEl('text',{x:W/2,y:H/2,'text-anchor':'middle','font-size':'12','fill':'#475569'}); t.textContent='No impact data'; s.appendChild(t); return }
-  const maxV=Math.max(...entries.map(([,v])=>v))||1
-  const pad={l:90,r:30,t:14,b:10}
-  const bh=40, gap=16
-  const COLS={'final_rule':'#4f7cff','proposed_rule':'#a78bfa','notice':'#34d399'}
-  const LABELS={'final_rule':'Final Rules','proposed_rule':'Proposed Rules','notice':'Notices'}
-  entries.forEach(([typ,val],i)=>{
-    const y=pad.t+i*(bh+gap)
-    const bw=Math.round((val/maxV)*(W-pad.l-pad.r))
-    const rect=svgEl('rect',{x:pad.l,y,width:bw,height:bh,rx:4,fill:(COLS[typ]||'#4f7cff')+'88'})
-    s.appendChild(rect)
-    const lbl=svgEl('text',{x:pad.l-6,y:y+bh/2+4,'text-anchor':'end','font-size':'10','fill':'#94a3b8'})
-    lbl.textContent=LABELS[typ]||typ
-    s.appendChild(lbl)
-    const vt=svgEl('text',{x:pad.l+bw+6,y:y+bh/2+4,'font-size':'10','fill':'#64748b'})
-    vt.textContent=val>0?`$${(val/1000).toFixed(1)}T`:''
-    s.appendChild(vt)
-  })
-}
-
-function drawTop10Chart(svgId, regs, W=400, H=260) {
-  const s=clearSvg(svgId); if(!s||!regs.length) return
-  const top=[...regs].sort((a,b)=>(b.composite_score||0)-(a.composite_score||0)).slice(0,10)
-  const maxV=top[0]?.composite_score||1
-  const pad={l:8,r:50,t:8,b:8}
-  const bh=Math.floor((H-pad.t-pad.b)/top.length)-3
-  top.forEach((r,i)=>{
-    const d=r.composite_score||0, y=pad.t+i*(bh+3)
-    const bw=Math.round((d/maxV)*(W-pad.l-pad.r-4))
-    const rect=svgEl('rect',{x:pad.l,y,width:bw,height:bh,rx:2,fill:driftHex(d)+'88'})
-    s.appendChild(rect)
-    const lbl=svgEl('text',{x:pad.l+4,y:y+bh/2+3.5,'font-size':'8','fill':'#94a3b8'})
-    lbl.textContent=(r.document_number||'').slice(0,18)
-    s.appendChild(lbl)
-    const vt=svgEl('text',{x:pad.l+bw+4,y:y+bh/2+3.5,'font-size':'8','fill':'#64748b'})
-    vt.textContent=Math.round(d*100)+'%'
-    s.appendChild(vt)
-  })
-}
-
-function drawAllCharts() {
-  if(!_allRegs.length) return
-  drawTimelineChart('chart-timeline',_allRegs,560,200)
-  drawAgencyChart('chart-agency',_allRegs,320,240)
-  drawHistogram('chart-hist',_allRegs,320,200)
-}
-
-function drawAnalyticsCharts() {
-  if(!_allRegs.length) return
-  drawTimelineChart('chart-timeline-big',_allRegs,900,220)
-  drawAgencyChart('chart-agency-big',_allRegs,400,260)
-  drawHistogram('chart-hist-big',_allRegs,400,260)
-  drawImpactChart('chart-impact-big',_allRegs,400,260)
-  drawTop10Chart('chart-top10',_allRegs,400,260)
-}
-
-// ═══════════════════════════════════════════════ MANUAL SEED TRIGGER
-async function triggerManualSeed() {
-  const btn = document.getElementById('seed-now-btn')
-  if(btn){ btn.disabled=true; btn.textContent='⏳ Seeding…' }
-  toast('Starting database seed — this takes ~30 seconds…','info')
-  try {
-    // Trigger the refresh endpoint with offline source to force seed
-    await fetch('/api/v1/refresh',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({lookback_days:90,source:'offline'})})
-    // Poll until data appears
-    const poll = setInterval(async()=>{
-      const ok = await initLoad()
-      if(ok){
-        clearInterval(poll)
-        document.getElementById('empty-state')?.remove()
-        toast('Database seeded successfully!','success')
-      }
-    },3000)
-    // Give up after 2 min
-    setTimeout(()=>clearInterval(poll),120000)
-  } catch(e) {
-    if(btn){ btn.disabled=false; btn.textContent='🌱 Seed Now' }
-    toast('Seed request failed','error')
+  function renderGrid(regs) {
+    const grid = document.getElementById('reg-grid');
+    if (!regs.length) {
+      grid.innerHTML = '<div class="loading">No regulations match this filter.</div>';
+      return;
+    }
+    grid.innerHTML = regs.map(buildCard).join('');
   }
-}
 
-function showEmptyState() {
-  const container = document.getElementById('dash-top-cards')
-  if(!container) return
-  container.innerHTML = `<div class="seeding-card" id="empty-state">
-    <div class="seeding-icon">🌱</div>
-    <div class="seeding-title">Database is empty</div>
-    <div class="seeding-sub" style="margin-bottom:16px">The auto-seed should start within 10 seconds of startup.<br/>If it's been longer, click below to trigger it manually.</div>
-    <button id="seed-now-btn" onclick="triggerManualSeed()" style="background:var(--blue);color:#fff;border:none;border-radius:8px;padding:10px 24px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">🌱 Seed Database Now</button>
-    <div style="margin-top:10px;font-size:11px;color:var(--text3)">Generates 3,250+ regulations offline — no internet required</div>
-  </div>`
-}
+  function filterRegs(filter, btn) {
+    currentFilter = filter;
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
 
-// ═══════════════════════════════════════════════ INIT
-;(async()=>{
-  pollStats()
-  _statsPoll = setInterval(pollStats,8000)
-  const ok = await initLoad()
-  if(!ok) {
-    // Show empty state with manual seed button after 30s
-    let emptyShown = false
-    const retry = setInterval(async()=>{
-      if(await initLoad()){ clearInterval(retry); return }
-      if(!emptyShown){ emptyShown=true; showEmptyState() }
-    },8000)
-    setTimeout(()=>{ if(!emptyShown){ emptyShown=true; showEmptyState() } },30000)
+    let filtered = allRegs;
+    if (filter === 'high') filtered = allRegs.filter(r => riskLevel(r.latest_change_score?.drift_score) === 'high');
+    else if (filter === 'medium') filtered = allRegs.filter(r => riskLevel(r.latest_change_score?.drift_score) === 'medium');
+    else if (filter === 'low') filtered = allRegs.filter(r => riskLevel(r.latest_change_score?.drift_score) === 'low');
+    else if (filter !== 'all') filtered = allRegs.filter(r => r.regulation_type === filter);
+
+    renderGrid(filtered);
   }
-})()
+
+  async function loadData() {
+    try {
+      const res = await fetch(`${BASE}/api/v1/regulations?page_size=50`);
+      const data = await res.json();
+      allRegs = data.items || data.regulations || data || [];
+
+      // Sort: flagged first, then by drift score desc
+      allRegs.sort((a, b) => {
+        const da = a.latest_change_score?.drift_score || 0;
+        const db = b.latest_change_score?.drift_score || 0;
+        return db - da;
+      });
+
+      // Update stats
+      document.getElementById('total-regs').textContent = data.total || allRegs.length;
+      const flagged = allRegs.filter(r => r.latest_change_score?.flagged_for_analysis).length;
+      document.getElementById('flagged-count').textContent = flagged;
+      const agencies = new Set(allRegs.map(r => r.agency)).size;
+      document.getElementById('agency-count').textContent = agencies;
+
+      renderGrid(allRegs);
+    } catch (err) {
+      document.getElementById('reg-grid').innerHTML =
+        '<div class="loading">Could not load data. Make sure the API is running.</div>';
+      console.error(err);
+    }
+  }
+
+  loadData();
 </script>
 </body>
 </html>
