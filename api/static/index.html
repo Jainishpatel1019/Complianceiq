@@ -1,558 +1,1163 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>ComplianceIQ — Regulatory Intelligence Platform</title>
-  <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>ComplianceIQ — Regulatory Intelligence Platform</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg0:#020810;--bg1:#060e1c;--bg2:#091426;--bg3:#0d1c35;--bg4:#102040;
+  --border:rgba(79,124,255,.09);--border2:rgba(79,124,255,.2);--border3:rgba(79,124,255,.38);
+  --blue:#4f7cff;--blue2:#3562e0;--blue3:#7da0ff;
+  --blue-dim:rgba(79,124,255,.09);--blue-glow:rgba(79,124,255,.28);
+  --red:#ff5c7c;--red-dim:rgba(255,92,124,.09);--red2:#ff3d62;
+  --amber:#ffb340;--amber-dim:rgba(255,179,64,.09);
+  --green:#00e5a0;--green-dim:rgba(0,229,160,.07);--green2:#00c488;
+  --purple:#9d6cff;--purple-dim:rgba(157,108,255,.09);
+  --cyan:#22d3ee;--cyan-dim:rgba(34,211,238,.07);
+  --text:#eef2ff;--text2:#7a8eb5;--text3:#364f72;--text4:#1e3054;
+  --sidebar:244px;--topbar:60px;
+  --r:12px;--r-sm:8px;--r-lg:18px;
+}
+html,body{height:100%;background:var(--bg0);color:var(--text);font-family:'Inter',sans-serif;font-size:14px;line-height:1.5;overflow:hidden}
+::-webkit-scrollbar{width:3px;height:3px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:rgba(79,124,255,.25);border-radius:3px}
 
-    :root {
-      --blue:   #2563eb;
-      --indigo: #4f46e5;
-      --green:  #16a34a;
-      --amber:  #d97706;
-      --red:    #dc2626;
-      --slate:  #0f172a;
-      --card:   #1e293b;
-      --border: #334155;
-      --text:   #e2e8f0;
-      --muted:  #94a3b8;
-    }
+/* ─── LAYOUT ─── */
+.app{display:flex;height:100vh}
 
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      background: var(--slate);
-      color: var(--text);
-      line-height: 1.6;
-    }
+/* ─── SIDEBAR ─── */
+.sidebar{
+  width:var(--sidebar);min-width:var(--sidebar);
+  background:linear-gradient(160deg,var(--bg1) 0%,var(--bg0) 100%);
+  border-right:1px solid var(--border);
+  display:flex;flex-direction:column;position:relative;z-index:20;
+}
+.sidebar::after{
+  content:'';position:absolute;top:0;right:0;bottom:0;width:1px;
+  background:linear-gradient(180deg,transparent 0%,rgba(79,124,255,.15) 35%,rgba(79,124,255,.15) 65%,transparent 100%);
+}
+.brand{padding:22px 18px 18px;display:flex;align-items:center;gap:12px}
+.brand-logo{
+  width:36px;height:36px;border-radius:10px;flex-shrink:0;
+  background:linear-gradient(135deg,#4f7cff 0%,#9d6cff 100%);
+  display:flex;align-items:center;justify-content:center;
+  font-size:15px;font-weight:900;color:#fff;
+  box-shadow:0 4px 16px rgba(79,124,255,.4);
+}
+.brand-text{flex:1;min-width:0}
+.brand-name{font-weight:800;font-size:14px;letter-spacing:-.4px}
+.brand-tagline{font-size:10px;color:var(--text3);letter-spacing:.3px;margin-top:1px}
+.live-pill{
+  display:flex;align-items:center;gap:4px;
+  font-size:9px;font-weight:700;letter-spacing:.7px;text-transform:uppercase;
+  color:var(--green);background:rgba(0,229,160,.08);
+  border:1px solid rgba(0,229,160,.18);border-radius:20px;padding:2px 7px;flex-shrink:0;
+}
+.live-dot{width:5px;height:5px;border-radius:50%;background:var(--green);animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(0,229,160,.5)}50%{box-shadow:0 0 0 5px rgba(0,229,160,0)}}
 
-    /* ── Nav ─────────────────────────────────────────────── */
-    nav {
-      display: flex; align-items: center; justify-content: space-between;
-      padding: 1rem 2rem;
-      border-bottom: 1px solid var(--border);
-      background: rgba(15,23,42,0.95);
-      position: sticky; top: 0; z-index: 100;
-      backdrop-filter: blur(8px);
-    }
-    .logo { font-size: 1.25rem; font-weight: 700; color: #fff; }
-    .logo span { color: #60a5fa; }
-    nav a {
-      color: var(--muted); text-decoration: none; font-size: 0.9rem;
-      margin-left: 1.5rem; transition: color .2s;
-    }
-    nav a:hover { color: #fff; }
-    .api-btn {
-      background: var(--blue); color: #fff !important;
-      padding: .4rem 1rem; border-radius: 6px; font-weight: 600;
-    }
-    .api-btn:hover { background: #1d4ed8 !important; }
+.nav{padding:8px 10px;flex:1;overflow-y:auto}
+.nav-section{font-size:9px;font-weight:700;color:var(--text3);letter-spacing:1.2px;text-transform:uppercase;padding:10px 8px 5px}
+.nav-item{
+  display:flex;align-items:center;gap:10px;padding:9px 10px;
+  border-radius:var(--r-sm);cursor:pointer;color:var(--text2);
+  font-size:13px;font-weight:500;transition:all .15s;
+  margin-bottom:1px;user-select:none;position:relative;
+}
+.nav-item:hover{color:var(--text);background:rgba(79,124,255,.07)}
+.nav-item.active{
+  color:#fff;background:linear-gradient(90deg,rgba(79,124,255,.16),rgba(79,124,255,.04));
+  border-left:2px solid var(--blue);padding-left:8px;
+}
+.nav-icon{width:18px;text-align:center;font-size:13px;flex-shrink:0;opacity:.75}
+.nav-item.active .nav-icon{opacity:1;color:var(--blue)}
+.nav-badge{margin-left:auto;font-size:10px;font-weight:700;background:var(--red-dim);color:var(--red);border:1px solid rgba(255,92,124,.2);border-radius:20px;padding:1px 6px}
 
-    /* ── Hero ────────────────────────────────────────────── */
-    .hero {
-      text-align: center;
-      padding: 5rem 2rem 3rem;
-      background: radial-gradient(ellipse at 50% 0%, rgba(79,70,229,.25) 0%, transparent 70%);
-    }
-    .badge {
-      display: inline-block;
-      background: rgba(79,70,229,.2);
-      color: #a5b4fc;
-      border: 1px solid rgba(79,70,229,.4);
-      border-radius: 999px;
-      padding: .25rem .9rem;
-      font-size: .8rem;
-      font-weight: 600;
-      letter-spacing: .05em;
-      margin-bottom: 1.5rem;
-    }
-    .hero h1 {
-      font-size: clamp(2rem, 5vw, 3.5rem);
-      font-weight: 800;
-      line-height: 1.15;
-      margin-bottom: 1.25rem;
-      background: linear-gradient(135deg, #fff 40%, #93c5fd);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-    }
-    .hero p {
-      max-width: 640px; margin: 0 auto 2.5rem;
-      font-size: 1.15rem; color: var(--muted);
-    }
-    .hero-btns { display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap; }
-    .btn-primary {
-      background: var(--indigo); color: #fff;
-      padding: .75rem 1.75rem; border-radius: 8px;
-      font-weight: 600; text-decoration: none; font-size: 1rem;
-      transition: background .2s;
-    }
-    .btn-primary:hover { background: #4338ca; }
-    .btn-secondary {
-      background: var(--card); color: var(--text);
-      padding: .75rem 1.75rem; border-radius: 8px;
-      font-weight: 600; text-decoration: none; font-size: 1rem;
-      border: 1px solid var(--border);
-      transition: background .2s;
-    }
-    .btn-secondary:hover { background: #2d3f55; }
+.sb-stats{margin:0 10px 8px;padding:12px 14px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--r)}
+.sb-row{display:flex;justify-content:space-between;align-items:center;padding:3px 0}
+.sb-lbl{font-size:11px;color:var(--text3)}
+.sb-val{font-size:12px;font-weight:700}
+.sb-val.g{color:var(--green)}
+.sb-val.r{color:var(--red)}
 
-    /* ── Stats strip ─────────────────────────────────────── */
-    .stats {
-      display: flex; justify-content: center; flex-wrap: wrap; gap: 2rem;
-      padding: 2rem;
-      border-top: 1px solid var(--border);
-      border-bottom: 1px solid var(--border);
-    }
-    .stat { text-align: center; }
-    .stat-value { font-size: 2rem; font-weight: 800; color: #60a5fa; }
-    .stat-label { font-size: .85rem; color: var(--muted); margin-top: .25rem; }
+.sb-footer{padding:10px 10px 14px}
+.sync-btn{
+  width:100%;display:flex;align-items:center;justify-content:center;gap:7px;
+  padding:10px 14px;border-radius:var(--r-sm);
+  background:linear-gradient(90deg,rgba(79,124,255,.13),rgba(157,108,255,.08));
+  border:1px solid rgba(79,124,255,.22);color:var(--blue3);
+  font-size:12px;font-weight:600;cursor:pointer;transition:all .18s;font-family:inherit;
+}
+.sync-btn:hover:not(:disabled){background:linear-gradient(90deg,var(--blue),var(--purple));border-color:transparent;color:#fff;box-shadow:0 4px 18px var(--blue-glow)}
+.sync-btn:disabled{opacity:.4;cursor:not-allowed}
+.sb-hint{text-align:center;font-size:10px;color:var(--text3);margin-top:6px}
 
-    /* ── Section layout ──────────────────────────────────── */
-    section { padding: 3rem 2rem; max-width: 1200px; margin: 0 auto; }
-    h2 { font-size: 1.6rem; font-weight: 700; margin-bottom: .5rem; }
-    .section-sub { color: var(--muted); font-size: 1rem; margin-bottom: 2rem; }
+/* ─── MAIN ─── */
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0}
 
-    /* ── How it works ────────────────────────────────────── */
-    .steps {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-      gap: 1.5rem;
-    }
-    .step {
-      background: var(--card);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 1.5rem;
-    }
-    .step-icon {
-      font-size: 2rem; margin-bottom: .75rem;
-    }
-    .step h3 { font-size: 1rem; font-weight: 700; margin-bottom: .5rem; }
-    .step p { font-size: .9rem; color: var(--muted); }
+/* ─── TOPBAR ─── */
+.topbar{
+  height:var(--topbar);min-height:var(--topbar);
+  background:var(--bg1);border-bottom:1px solid var(--border);
+  display:flex;align-items:center;gap:14px;padding:0 24px;
+}
+.tb-breadcrumb{display:flex;flex-direction:column}
+.tb-title{font-size:15px;font-weight:700;letter-spacing:-.3px}
+.tb-sub{font-size:11px;color:var(--text3)}
+.search-wrap{flex:1;max-width:380px;position:relative;margin-left:16px}
+.search-input{
+  width:100%;background:var(--bg2);border:1px solid var(--border);
+  border-radius:var(--r-sm);padding:8px 12px 8px 36px;
+  color:var(--text);font-size:13px;font-family:inherit;outline:none;transition:all .18s;
+}
+.search-input:focus{border-color:var(--border2);background:var(--bg3);box-shadow:0 0 0 3px var(--blue-dim)}
+.search-input::placeholder{color:var(--text3)}
+.search-icon{position:absolute;left:11px;top:50%;transform:translateY(-50%);color:var(--text3);font-size:14px;pointer-events:none}
+.tb-right{margin-left:auto;display:flex;align-items:center;gap:8px}
+.tb-btn{display:flex;align-items:center;gap:5px;padding:7px 14px;border-radius:20px;font-size:11px;font-weight:600;cursor:pointer;border:1px solid var(--border);color:var(--text2);transition:all .15s;background:transparent;font-family:inherit;white-space:nowrap}
+.tb-btn:hover{border-color:var(--border2);color:var(--text)}
+.tb-btn.primary{background:var(--blue);border-color:transparent;color:#fff;box-shadow:0 2px 12px var(--blue-glow)}
+.tb-btn.primary:hover{background:var(--blue2)}
+.tb-time{font-size:11px;color:var(--text3);font-family:'JetBrains Mono',monospace;padding:7px 12px;background:var(--bg2);border:1px solid var(--border);border-radius:20px}
 
-    /* ── Live feed ───────────────────────────────────────── */
-    .filters {
-      display: flex; gap: .75rem; flex-wrap: wrap; margin-bottom: 1.5rem;
-    }
-    .filter-btn {
-      background: var(--card);
-      border: 1px solid var(--border);
-      color: var(--muted);
-      padding: .4rem .9rem;
-      border-radius: 6px;
-      cursor: pointer;
-      font-size: .85rem;
-      transition: all .2s;
-    }
-    .filter-btn.active, .filter-btn:hover {
-      background: var(--indigo);
-      border-color: var(--indigo);
-      color: #fff;
-    }
-    .reg-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
-      gap: 1.25rem;
-    }
-    .reg-card {
-      background: var(--card);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 1.25rem;
-      transition: border-color .2s, transform .2s;
-      cursor: default;
-    }
-    .reg-card:hover { border-color: #4f46e5; transform: translateY(-2px); }
-    .reg-card.high-risk { border-left: 3px solid var(--red); }
-    .reg-card.medium-risk { border-left: 3px solid var(--amber); }
-    .reg-card.low-risk { border-left: 3px solid var(--green); }
+/* ─── CONTENT ─── */
+.content{flex:1;overflow-y:auto;overflow-x:hidden;padding:22px 24px 32px}
+.view{display:none}
+.view.active{display:block;animation:fadeIn .2s ease}
+@keyframes fadeIn{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
 
-    .card-header {
-      display: flex; align-items: flex-start;
-      justify-content: space-between; gap: .75rem; margin-bottom: .75rem;
-    }
-    .card-title {
-      font-weight: 600; font-size: .95rem; line-height: 1.4;
-      flex: 1;
-    }
-    .risk-badge {
-      flex-shrink: 0;
-      padding: .2rem .6rem;
-      border-radius: 999px;
-      font-size: .75rem;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: .05em;
-    }
-    .risk-high { background: rgba(220,38,38,.15); color: #fca5a5; }
-    .risk-medium { background: rgba(217,119,6,.15); color: #fcd34d; }
-    .risk-low { background: rgba(22,163,74,.15); color: #86efac; }
+/* ─── KPI CARDS ─── */
+.kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(168px,1fr));gap:14px;margin-bottom:22px}
+.kpi-card{
+  background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);
+  padding:18px 20px 14px;position:relative;overflow:hidden;
+  transition:all .2s;cursor:default;
+}
+.kpi-card:hover{border-color:var(--border2);transform:translateY(-2px);box-shadow:0 10px 32px rgba(0,0,0,.5)}
+.kpi-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--kc,var(--blue));border-radius:var(--r) var(--r) 0 0}
+.kpi-card::after{content:'';position:absolute;top:0;left:0;width:100%;height:100%;background:radial-gradient(ellipse at 10% 0,var(--kb,var(--blue-dim)) 0%,transparent 55%);pointer-events:none}
+.kpi-top{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:8px}
+.kpi-label{font-size:10px;font-weight:600;color:var(--text3);letter-spacing:.8px;text-transform:uppercase}
+.kpi-icon{font-size:18px;opacity:.3}
+.kpi-val{font-size:28px;font-weight:900;letter-spacing:-1.5px;line-height:1;color:var(--kc,var(--blue));margin-bottom:4px}
+.kpi-sub{font-size:11px;color:var(--text3);margin-bottom:8px}
+.kpi-spark{height:28px;position:relative}
+.kpi-trend{font-size:10px;font-weight:700;display:inline-flex;align-items:center;gap:3px;padding:2px 7px;border-radius:20px}
+.kpi-trend.up{color:var(--green);background:var(--green-dim)}
+.kpi-trend.dn{color:var(--red);background:var(--red-dim)}
+.kpi-trend.neu{color:var(--blue3);background:var(--blue-dim)}
 
-    .card-meta {
-      display: flex; flex-wrap: wrap; gap: .5rem;
-      margin-bottom: .75rem;
-    }
-    .meta-tag {
-      background: rgba(255,255,255,.06);
-      border: 1px solid var(--border);
-      border-radius: 4px;
-      padding: .15rem .5rem;
-      font-size: .75rem;
-      color: var(--muted);
-    }
+/* ─── CHART CARDS ─── */
+.chart-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:18px 20px;transition:border-color .18s}
+.chart-card:hover{border-color:var(--border2)}
+.cc-head{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:14px}
+.cc-title{font-size:13px;font-weight:700;letter-spacing:-.2px}
+.cc-sub{font-size:11px;color:var(--text3);margin-top:2px}
+.cc-legend{display:flex;gap:10px;flex-wrap:wrap}
+.cc-lg-item{display:flex;align-items:center;gap:5px;font-size:10px;color:var(--text2)}
+.cc-lg-dot{width:8px;height:8px;border-radius:50%}
 
-    .drift-bar-wrap {
-      margin-bottom: .5rem;
-    }
-    .drift-bar-label {
-      display: flex; justify-content: space-between;
-      font-size: .75rem; color: var(--muted); margin-bottom: .25rem;
-    }
-    .drift-bar-track {
-      background: rgba(255,255,255,.08);
-      border-radius: 999px; height: 6px; overflow: hidden;
-    }
-    .drift-bar-fill {
-      height: 100%; border-radius: 999px;
-      transition: width .6s ease;
-    }
+/* ─── GRIDS ─── */
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:18px}
+.g3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:18px}
+.g4{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:18px}
+.g32{display:grid;grid-template-columns:1.6fr 1fr;gap:16px;margin-bottom:18px}
+.g23{display:grid;grid-template-columns:1fr 1.6fr;gap:16px;margin-bottom:18px}
+.span2{grid-column:span 2}
+.span3{grid-column:span 3}
 
-    .card-metrics {
-      display: grid; grid-template-columns: 1fr 1fr;
-      gap: .5rem; margin-top: .75rem;
-    }
-    .metric {
-      background: rgba(255,255,255,.04);
-      border-radius: 6px;
-      padding: .5rem .75rem;
-    }
-    .metric-label { font-size: .7rem; color: var(--muted); margin-bottom: .15rem; }
-    .metric-value { font-size: .95rem; font-weight: 700; }
+/* ─── SECTION HEADER ─── */
+.sh{display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:14px}
+.sh-title{font-size:15px;font-weight:700;letter-spacing:-.3px}
+.sh-sub{font-size:11px;color:var(--text3);margin-top:2px}
+.sh-link{font-size:11px;color:var(--blue);cursor:pointer;font-weight:500}
+.sh-link:hover{text-decoration:underline}
 
-    /* ── Explanation section ──────────────────────────────── */
-    .explainer {
-      background: var(--card);
-      border: 1px solid var(--border);
-      border-radius: 16px;
-      padding: 2rem;
-      margin-top: 1rem;
-    }
-    .explainer h3 {
-      font-size: 1.1rem; font-weight: 700; margin-bottom: 1rem;
-      color: #93c5fd;
-    }
-    .term-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-      gap: 1rem;
-    }
-    .term {
-      border-left: 2px solid var(--indigo);
-      padding-left: 1rem;
-    }
-    .term-name { font-weight: 700; font-size: .9rem; margin-bottom: .25rem; }
-    .term-def { font-size: .85rem; color: var(--muted); }
+/* ─── REGULATION CARDS ─── */
+.year-band{display:flex;align-items:center;gap:10px;margin:20px 0 10px}
+.year-chip{font-size:11px;font-weight:800;padding:3px 10px;border-radius:5px;background:var(--bg3);border:1px solid var(--border);color:var(--text2)}
+.year-chip.cur{background:rgba(0,229,160,.07);border-color:rgba(0,229,160,.2);color:var(--green)}
+.year-div{flex:1;height:1px;background:var(--border)}
+.year-ct{font-size:11px;color:var(--text3)}
 
-    /* ── Footer ──────────────────────────────────────────── */
-    footer {
-      border-top: 1px solid var(--border);
-      padding: 2rem;
-      text-align: center;
-      color: var(--muted);
-      font-size: .85rem;
-    }
-    footer a { color: #60a5fa; text-decoration: none; }
+.reg-card{
+  background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);
+  padding:16px 18px;margin-bottom:9px;cursor:pointer;transition:all .15s;
+  position:relative;overflow:hidden;
+}
+.reg-card::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;border-radius:3px 0 0 3px}
+.reg-card.c::before{background:var(--red)}
+.reg-card.h::before{background:var(--amber)}
+.reg-card.m::before{background:var(--blue)}
+.reg-card.l::before{background:var(--green)}
+.reg-card:hover{border-color:var(--border2);transform:translateX(2px);box-shadow:0 4px 22px rgba(0,0,0,.35)}
 
-    /* ── Loading / empty ──────────────────────────────────── */
-    .loading {
-      text-align: center; padding: 3rem; color: var(--muted);
-    }
-    .spinner {
-      display: inline-block; width: 32px; height: 32px;
-      border: 3px solid var(--border);
-      border-top-color: var(--indigo);
-      border-radius: 50%;
-      animation: spin .7s linear infinite;
-      margin-bottom: 1rem;
-    }
-    @keyframes spin { to { transform: rotate(360deg); } }
-  </style>
+.rc-inner{display:flex;align-items:flex-start;gap:14px}
+.drift-ring{
+  flex-shrink:0;width:52px;height:52px;border-radius:50%;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+}
+.dr-num{font-size:14px;font-weight:900;line-height:1;letter-spacing:-.5px}
+.dr-lbl{font-size:8px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;opacity:.55}
+.dr-c{background:rgba(255,92,124,.09);border:2px solid rgba(255,92,124,.3)}
+.dr-h{background:rgba(255,179,64,.07);border:2px solid rgba(255,179,64,.25)}
+.dr-m{background:rgba(79,124,255,.07);border:2px solid rgba(79,124,255,.22)}
+.dr-l{background:rgba(0,229,160,.05);border:2px solid rgba(0,229,160,.2)}
+
+.rc-body{flex:1;min-width:0}
+.rc-title-row{display:flex;align-items:flex-start;gap:8px;margin-bottom:5px}
+.rc-title{font-size:13px;font-weight:600;line-height:1.4;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pills{display:flex;gap:4px;flex-wrap:wrap;flex-shrink:0}
+.pill{font-size:9px;font-weight:700;padding:2px 6px;border-radius:4px;letter-spacing:.4px;text-transform:uppercase;white-space:nowrap}
+.p-rule{background:var(--blue-dim);color:var(--blue3);border:1px solid rgba(79,124,255,.2)}
+.p-prop{background:var(--purple-dim);color:var(--purple);border:1px solid rgba(157,108,255,.2)}
+.p-not{background:rgba(122,142,181,.07);color:var(--text2);border:1px solid var(--border)}
+.p-flag{background:var(--red-dim);color:var(--red);border:1px solid rgba(255,92,124,.2)}
+.p-sig{background:var(--amber-dim);color:var(--amber);border:1px solid rgba(255,179,64,.2)}
+
+.rc-meta{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.rc-mi{font-size:11px;color:var(--text3)}
+.rc-foot{display:flex;align-items:center;gap:10px;margin-top:10px;padding-top:10px;border-top:1px solid var(--border)}
+.db-wrap{flex:1;height:3px;background:var(--bg3);border-radius:2px;overflow:hidden}
+.db-fill{height:100%;border-radius:2px;transition:width .5s ease}
+.imp-tag{font-size:10px;font-weight:700;color:var(--amber)}
+.rc-acts{display:flex;gap:6px;margin-left:auto}
+.rc-btn{font-size:10px;font-weight:600;padding:4px 9px;border-radius:5px;cursor:pointer;transition:all .15s;border:1px solid var(--border);color:var(--text3);background:transparent;font-family:inherit}
+.rc-btn:hover{border-color:var(--border2);color:var(--text)}
+.rc-btn.prim{border-color:rgba(79,124,255,.28);color:var(--blue);background:var(--blue-dim)}
+.rc-btn.prim:hover{background:var(--blue);color:#fff;border-color:transparent}
+
+.proof-panel{display:none;margin-top:10px}
+.proof-panel.open{display:grid;grid-template-columns:1fr 1fr;gap:8px;animation:fadeIn .15s ease}
+.proof-box{border-radius:var(--r-sm);padding:10px 12px}
+.p-old{background:rgba(255,92,124,.04);border:1px solid rgba(255,92,124,.12)}
+.p-new{background:rgba(0,229,160,.04);border:1px solid rgba(0,229,160,.12)}
+.proof-lbl{font-size:9px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;margin-bottom:5px}
+.p-old .proof-lbl{color:var(--red)}
+.p-new .proof-lbl{color:var(--green)}
+.proof-txt{font-size:11px;line-height:1.6;color:var(--text2);font-family:'JetBrains Mono',monospace}
+
+/* ─── FEED BAR ─── */
+.feed-bar{display:flex;align-items:center;gap:8px;margin-bottom:16px;flex-wrap:wrap}
+.fchip{display:flex;align-items:center;gap:5px;padding:7px 13px;border-radius:20px;border:1px solid var(--border);background:transparent;color:var(--text2);font-size:11px;font-weight:500;cursor:pointer;transition:all .15s;font-family:inherit}
+.fchip:hover{border-color:var(--border2);color:var(--text)}
+.fchip.on{background:var(--blue-dim);border-color:rgba(79,124,255,.3);color:var(--blue3)}
+.feed-ct{font-size:11px;color:var(--text3);margin-left:auto}
+
+/* ─── ALERTS ─── */
+.alert-card{display:flex;align-items:center;gap:14px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:14px 18px;margin-bottom:9px;transition:border-color .15s}
+.alert-card:hover{border-color:var(--border2)}
+.alert-ico{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
+.a-crit{background:rgba(255,92,124,.12);border:1px solid rgba(255,92,124,.25)}
+.a-high{background:rgba(255,179,64,.1);border:1px solid rgba(255,179,64,.22)}
+.a-info{background:var(--blue-dim);border:1px solid rgba(79,124,255,.2)}
+.alert-body{flex:1;min-width:0}
+.alert-title{font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.alert-meta{font-size:11px;color:var(--text3);margin-top:2px}
+.alert-cta{font-size:11px;font-weight:600;padding:7px 14px;border-radius:var(--r-sm);border:1px solid rgba(79,124,255,.28);color:var(--blue);background:var(--blue-dim);cursor:pointer;font-family:inherit;white-space:nowrap;transition:all .15s}
+.alert-cta:hover{background:var(--blue);color:#fff;border-color:transparent}
+
+/* ─── HEATMAP ─── */
+.heatmap-wrap{overflow-x:auto}
+.heatmap-table{border-collapse:collapse;font-size:11px;width:100%}
+.hm-cell{padding:5px 6px;text-align:center;border-radius:3px;cursor:default;transition:all .15s;font-weight:600;font-size:10px}
+.hm-label{padding:5px 8px;color:var(--text3);font-size:10px;font-weight:500;white-space:nowrap;text-align:right}
+.hm-yr{padding:5px 6px;color:var(--text3);font-size:10px;font-weight:600;text-align:center}
+
+/* ─── SCATTER LEGEND ─── */
+.scatter-note{font-size:10px;color:var(--text3);margin-top:8px;text-align:center}
+
+/* ─── STACK ─── */
+.stack-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:14px}
+.stack-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:16px 18px;display:flex;gap:13px;transition:all .18s}
+.stack-card:hover{border-color:var(--border2);transform:translateY(-2px)}
+.stack-icon{font-size:24px;flex-shrink:0}
+.stack-name{font-size:13px;font-weight:700;margin-bottom:4px}
+.stack-desc{font-size:11px;color:var(--text2);line-height:1.6}
+.stack-tag{display:inline-block;margin-top:7px;font-size:9px;font-weight:700;padding:2px 8px;border-radius:4px;letter-spacing:.5px;text-transform:uppercase;background:var(--blue-dim);color:var(--blue3);border:1px solid rgba(79,124,255,.2)}
+
+/* ─── EMPTY / SHIMMER ─── */
+.empty-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:40px 24px;text-align:center}
+.empty-icon{font-size:32px;margin-bottom:10px}
+.empty-title{font-size:16px;font-weight:700;margin-bottom:6px}
+.empty-sub{font-size:13px;color:var(--text3)}
+.shimmer{height:4px;background:linear-gradient(90deg,var(--bg3) 0%,rgba(79,124,255,.15) 50%,var(--bg3) 100%);background-size:200% 100%;animation:shim 1.5s infinite;border-radius:2px;margin-top:14px}
+@keyframes shim{0%{background-position:200% 0}100%{background-position:-200% 0}}
+.action-btn{margin-top:14px;padding:9px 20px;border-radius:var(--r-sm);border:1px solid rgba(79,124,255,.3);background:var(--blue-dim);color:var(--blue3);font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;transition:all .18s}
+.action-btn:hover{background:var(--blue);color:#fff;border-color:transparent}
+
+/* ─── MODAL ─── */
+.modal-bg{position:fixed;inset:0;background:rgba(2,8,16,.85);z-index:100;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .22s;backdrop-filter:blur(4px)}
+.modal-bg.open{opacity:1;pointer-events:all}
+.modal{background:var(--bg2);border:1px solid var(--border2);border-radius:var(--r-lg);width:780px;max-width:94vw;max-height:88vh;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 24px 80px rgba(0,0,0,.7);transform:translateY(10px);transition:transform .22s}
+.modal-bg.open .modal{transform:translateY(0)}
+.modal-head{display:flex;align-items:flex-start;justify-content:space-between;padding:20px 24px 16px;border-bottom:1px solid var(--border)}
+.modal-title{font-size:16px;font-weight:700;letter-spacing:-.3px;line-height:1.3}
+.modal-doc{font-size:11px;color:var(--text3);margin-top:3px;font-family:'JetBrains Mono',monospace}
+.modal-close{background:var(--bg3);border:1px solid var(--border);width:30px;height:30px;border-radius:8px;cursor:pointer;color:var(--text2);font-size:14px;flex-shrink:0;transition:all .15s;font-family:inherit}
+.modal-close:hover{background:var(--bg4);color:var(--text)}
+.modal-body{overflow-y:auto;padding:20px 24px 24px;flex:1}
+.modal-section{margin-bottom:20px}
+.modal-section:last-child{margin-bottom:0}
+.modal-section-label{font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text3);margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid var(--border)}
+.detail-row{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.detail-cell{background:var(--bg3);border-radius:var(--r-sm);padding:10px 12px}
+.detail-cell-label{font-size:9px;color:var(--text3);letter-spacing:.5px;text-transform:uppercase;margin-bottom:4px}
+.detail-cell-value{font-size:14px;font-weight:700}
+.impact-banner{display:flex;align-items:center;gap:14px;background:var(--amber-dim);border:1px solid rgba(255,179,64,.2);border-radius:var(--r-sm);padding:12px 16px}
+.impact-num{font-size:20px;font-weight:900;color:var(--amber);letter-spacing:-.5px}
+.impact-sub{font-size:11px;color:var(--text3);margin-top:2px}
+.plain-box{background:var(--bg3);border-left:3px solid var(--blue);border-radius:0 var(--r-sm) var(--r-sm) 0;padding:12px 14px;font-size:13px;color:var(--text2);line-height:1.7}
+.diff-row{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+.diff-box{border-radius:var(--r-sm);padding:12px 14px}
+.diff-old{background:rgba(255,92,124,.04);border:1px solid rgba(255,92,124,.12)}
+.diff-new{background:rgba(0,229,160,.04);border:1px solid rgba(0,229,160,.12)}
+.diff-lbl{font-size:9px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;margin-bottom:6px}
+.diff-old .diff-lbl{color:var(--red)}
+.diff-new .diff-lbl{color:var(--green)}
+.diff-txt{font-size:11px;line-height:1.65;color:var(--text2);font-family:'JetBrains Mono',monospace}
+
+/* ─── TOAST ─── */
+.toast{position:fixed;bottom:22px;right:22px;z-index:200;background:var(--bg2);border:1px solid var(--border2);border-radius:var(--r);padding:12px 16px;font-size:13px;font-weight:500;display:flex;align-items:center;gap:9px;transform:translateY(12px);opacity:0;pointer-events:none;transition:all .25s;box-shadow:0 8px 32px rgba(0,0,0,.5);max-width:360px}
+.toast.show{transform:translateY(0);opacity:1;pointer-events:all}
+.toast.ok{border-color:rgba(0,229,160,.3);color:var(--green)}
+.toast.err{border-color:rgba(255,92,124,.3);color:var(--red)}
+.toast.info{border-color:rgba(79,124,255,.3);color:var(--blue3)}
+
+/* ─── DIVIDER STAT ROW ─── */
+.stat-row{display:flex;gap:1px;margin-bottom:18px;background:var(--border);border-radius:var(--r);overflow:hidden;border:1px solid var(--border)}
+.stat-cell{flex:1;background:var(--bg2);padding:14px 18px;text-align:center}
+.stat-cell-val{font-size:22px;font-weight:900;letter-spacing:-1px;line-height:1}
+.stat-cell-lbl{font-size:10px;color:var(--text3);margin-top:3px}
+
+canvas{max-width:100%}
+</style>
 </head>
 <body>
+<div class="app">
 
-<!-- ── Nav ──────────────────────────────────────────────────── -->
-<nav>
-  <div class="logo">Compliance<span>IQ</span></div>
-  <div>
-    <a href="#how-it-works">How it works</a>
-    <a href="#live-feed">Live Feed</a>
-    <a href="#glossary">Glossary</a>
-    <a href="/docs" class="api-btn">API Docs →</a>
+<!-- ══ SIDEBAR ══ -->
+<aside class="sidebar">
+  <div class="brand">
+    <div class="brand-logo">C</div>
+    <div class="brand-text">
+      <div class="brand-name">ComplianceIQ</div>
+      <div class="brand-tagline">Regulatory Intelligence</div>
+    </div>
+    <div class="live-pill"><span class="live-dot"></span>LIVE</div>
   </div>
-</nav>
 
-<!-- ── Hero ─────────────────────────────────────────────────── -->
-<div class="hero">
-  <div class="badge">🏦 Banking Regulatory Intelligence · Live Demo</div>
-  <h1>Know which banking<br>regulations changed<br>before they cost you.</h1>
-  <p>ComplianceIQ reads every US banking regulation published by the OCC, FDIC, FRB, and CFPB — and tells you in plain English which ones matter, why, and how much money is at stake.</p>
-  <div class="hero-btns">
-    <a href="#live-feed" class="btn-primary">See Live Regulations ↓</a>
-    <a href="/docs" class="btn-secondary">Explore the API</a>
+  <nav class="nav">
+    <div class="nav-section">Platform</div>
+    <div class="nav-item active" onclick="nav('dashboard')"><span class="nav-icon">⊞</span>Dashboard</div>
+    <div class="nav-item" onclick="nav('feed')"><span class="nav-icon">≡</span>Regulation Feed</div>
+    <div class="nav-item" onclick="nav('analytics')"><span class="nav-icon">◈</span>Analytics</div>
+    <div class="nav-item" onclick="nav('alerts')" id="nav-alerts">
+      <span class="nav-icon">◎</span>Alerts
+      <span class="nav-badge" id="alerts-badge" style="display:none">0</span>
+    </div>
+    <div class="nav-section" style="margin-top:8px">System</div>
+    <div class="nav-item" onclick="nav('stack')"><span class="nav-icon">⬡</span>Tech Stack</div>
+    <div class="nav-item" onclick="window.open('/docs','_blank')"><span class="nav-icon">↗</span>API Docs</div>
+  </nav>
+
+  <div class="sb-stats">
+    <div class="sb-row"><span class="sb-lbl">Regulations</span><span class="sb-val g" id="sb-total">—</span></div>
+    <div class="sb-row"><span class="sb-lbl">Flagged</span><span class="sb-val r" id="sb-flagged">—</span></div>
+    <div class="sb-row"><span class="sb-lbl">Agencies</span><span class="sb-val" id="sb-agencies">—</span></div>
+    <div class="sb-row"><span class="sb-lbl">Avg Drift</span><span class="sb-val" id="sb-drift" style="color:var(--amber)">—</span></div>
+  </div>
+
+  <div class="sb-footer">
+    <button class="sync-btn" id="sync-btn" onclick="doSync()">
+      <span id="sync-ico">↺</span><span id="sync-lbl">Sync Federal Register</span>
+    </button>
+    <div class="sb-hint">Daily auto-sync at 07:00 UTC</div>
+  </div>
+</aside>
+
+<!-- ══ MAIN ══ -->
+<div class="main">
+  <div class="topbar">
+    <div class="tb-breadcrumb">
+      <div class="tb-title" id="top-title">Dashboard</div>
+      <div class="tb-sub" id="top-sub">Regulatory intelligence overview</div>
+    </div>
+    <div class="search-wrap">
+      <span class="search-icon">⌕</span>
+      <input class="search-input" id="search" placeholder="Search regulations, agencies, doc numbers…" oninput="onSearch(this.value)"/>
+    </div>
+    <div class="tb-right">
+      <div class="tb-time" id="tb-time">—</div>
+      <button class="tb-btn" onclick="nav('analytics')">◈ Analytics</button>
+      <button class="tb-btn primary" onclick="nav('alerts')">◎ Alerts</button>
+    </div>
+  </div>
+
+  <div class="content">
+
+    <!-- ══ DASHBOARD ══ -->
+    <div class="view active" id="view-dashboard">
+
+      <!-- KPI Row -->
+      <div class="kpi-grid">
+        <div class="kpi-card" style="--kc:var(--blue);--kb:var(--blue-dim)">
+          <div class="kpi-top"><div class="kpi-label">Regulations Tracked</div><div class="kpi-icon">≡</div></div>
+          <div class="kpi-val" id="k-total">—</div>
+          <div class="kpi-sub">Federal Register, all years</div>
+          <div class="kpi-spark"><canvas id="sp-total" height="28"></canvas></div>
+        </div>
+        <div class="kpi-card" style="--kc:var(--red);--kb:var(--red-dim)">
+          <div class="kpi-top"><div class="kpi-label">Flagged for Review</div><div class="kpi-icon">⚑</div></div>
+          <div class="kpi-val" id="k-flagged">—</div>
+          <div class="kpi-sub">High semantic drift detected</div>
+          <div class="kpi-spark"><canvas id="sp-flag" height="28"></canvas></div>
+        </div>
+        <div class="kpi-card" style="--kc:var(--amber);--kb:var(--amber-dim)">
+          <div class="kpi-top"><div class="kpi-label">Capital Exposure</div><div class="kpi-icon">◈</div></div>
+          <div class="kpi-val" id="k-impact">—</div>
+          <div class="kpi-sub">Est. aggregate risk ($B)</div>
+          <div class="kpi-spark"><canvas id="sp-imp" height="28"></canvas></div>
+        </div>
+        <div class="kpi-card" style="--kc:var(--green);--kb:var(--green-dim)">
+          <div class="kpi-top"><div class="kpi-label">Agencies Monitored</div><div class="kpi-icon">⬡</div></div>
+          <div class="kpi-val" id="k-agencies">—</div>
+          <div class="kpi-sub">Fed, OCC, CFPB, FDIC…</div>
+          <div class="kpi-spark"><canvas id="sp-ag" height="28"></canvas></div>
+        </div>
+        <div class="kpi-card" style="--kc:var(--purple);--kb:var(--purple-dim)">
+          <div class="kpi-top"><div class="kpi-label">Avg Composite Drift</div><div class="kpi-icon">◎</div></div>
+          <div class="kpi-val" id="k-avgdrift" style="color:var(--purple)">—</div>
+          <div class="kpi-sub">Across all regulation pairs</div>
+          <div class="kpi-spark"><canvas id="sp-drift" height="28"></canvas></div>
+        </div>
+      </div>
+
+      <!-- Quick stat row -->
+      <div class="stat-row">
+        <div class="stat-cell"><div class="stat-cell-val" style="color:var(--blue)" id="q-final">—</div><div class="stat-cell-lbl">Final Rules</div></div>
+        <div class="stat-cell"><div class="stat-cell-val" style="color:var(--purple)" id="q-prop">—</div><div class="stat-cell-lbl">Proposed Rules</div></div>
+        <div class="stat-cell"><div class="stat-cell-val" style="color:var(--cyan)" id="q-notice">—</div><div class="stat-cell-lbl">Notices</div></div>
+        <div class="stat-cell"><div class="stat-cell-val" style="color:var(--red)" id="q-sig">—</div><div class="stat-cell-lbl">Statistically Significant</div></div>
+      </div>
+
+      <!-- Row 1: Timeline + Stacked Type Area -->
+      <div class="g2">
+        <div class="chart-card">
+          <div class="cc-head">
+            <div><div class="cc-title">Publications by Year</div><div class="cc-sub">Regulations 2015–2026</div></div>
+          </div>
+          <canvas id="ch-timeline" height="160"></canvas>
+        </div>
+        <div class="chart-card">
+          <div class="cc-head">
+            <div><div class="cc-title">Regulation Type Mix</div><div class="cc-sub">Final rules vs proposed vs notices</div></div>
+            <div class="cc-legend">
+              <div class="cc-lg-item"><div class="cc-lg-dot" style="background:#4f7cff"></div>Final</div>
+              <div class="cc-lg-item"><div class="cc-lg-dot" style="background:#9d6cff"></div>Proposed</div>
+              <div class="cc-lg-item"><div class="cc-lg-dot" style="background:#22d3ee"></div>Notices</div>
+            </div>
+          </div>
+          <canvas id="ch-stacked" height="160"></canvas>
+        </div>
+      </div>
+
+      <!-- Row 2: Agency doughnut + Drift histogram -->
+      <div class="g2">
+        <div class="chart-card">
+          <div class="cc-head">
+            <div><div class="cc-title">Regulations by Agency</div><div class="cc-sub">Top regulators by count</div></div>
+          </div>
+          <canvas id="ch-agency" height="190"></canvas>
+        </div>
+        <div class="chart-card">
+          <div class="cc-head">
+            <div><div class="cc-title">Drift Score Distribution</div><div class="cc-sub">All composite scores histogram</div></div>
+          </div>
+          <canvas id="ch-hist" height="190"></canvas>
+        </div>
+      </div>
+
+      <!-- Row 3: Top drifters list -->
+      <div class="sh">
+        <div><div class="sh-title">Highest Drift Detected</div><div class="sh-sub">Top 5 by composite score</div></div>
+        <span class="sh-link" onclick="nav('feed')">View all →</span>
+      </div>
+      <div id="dash-top-regs">
+        <div class="empty-card"><div class="empty-icon">⏳</div><div class="empty-title">Loading…</div><div class="shimmer"></div></div>
+      </div>
+    </div>
+
+    <!-- ══ FEED ══ -->
+    <div class="view" id="view-feed">
+      <div class="feed-bar">
+        <button class="fchip on" id="fc-date" onclick="setSort('date')">📅 Newest First</button>
+        <button class="fchip" id="fc-drift" onclick="setSort('drift')">🔥 Highest Drift</button>
+        <button class="fchip" id="fc-flag" onclick="toggleFlag()">🚨 Flagged Only</button>
+        <span class="feed-ct" id="feed-count"></span>
+      </div>
+      <div id="feed-list">
+        <div class="empty-card"><div class="empty-icon">⏳</div><div class="empty-title">Loading regulations…</div><div class="shimmer"></div></div>
+      </div>
+    </div>
+
+    <!-- ══ ANALYTICS ══ -->
+    <div class="view" id="view-analytics">
+
+      <!-- Full timeline line -->
+      <div class="chart-card" style="margin-bottom:18px">
+        <div class="cc-head">
+          <div><div class="cc-title">Regulatory Activity Trend — Federal Register 2015–2026</div><div class="cc-sub">Cumulative and annual publication volumes</div></div>
+          <div class="cc-legend">
+            <div class="cc-lg-item"><div class="cc-lg-dot" style="background:#4f7cff"></div>Annual</div>
+            <div class="cc-lg-item"><div class="cc-lg-dot" style="background:#00e5a0"></div>Cumulative</div>
+          </div>
+        </div>
+        <canvas id="ch-tl-big" height="150"></canvas>
+      </div>
+
+      <div class="g3">
+        <!-- Agency horizontal bar -->
+        <div class="chart-card">
+          <div class="cc-head"><div><div class="cc-title">Agency Volume</div><div class="cc-sub">Regulations per regulator</div></div></div>
+          <canvas id="ch-ag-big" height="220"></canvas>
+        </div>
+        <!-- Drift histogram -->
+        <div class="chart-card">
+          <div class="cc-head"><div><div class="cc-title">Drift Distribution</div><div class="cc-sub">Score histogram across all records</div></div></div>
+          <canvas id="ch-hs-big" height="220"></canvas>
+        </div>
+        <!-- Impact doughnut -->
+        <div class="chart-card">
+          <div class="cc-head"><div><div class="cc-title">Impact by Type</div><div class="cc-sub">Est. capital exposure ($B) per rule class</div></div></div>
+          <canvas id="ch-imp-big" height="220"></canvas>
+        </div>
+      </div>
+
+      <!-- NEW: JSD vs Wasserstein scatter -->
+      <div class="g2" style="margin-bottom:18px">
+        <div class="chart-card">
+          <div class="cc-head">
+            <div><div class="cc-title">Risk Matrix — JSD vs Wasserstein</div><div class="cc-sub">Each dot = one regulation pair; color = severity</div></div>
+            <div class="cc-legend">
+              <div class="cc-lg-item"><div class="cc-lg-dot" style="background:#ff5c7c"></div>Critical</div>
+              <div class="cc-lg-item"><div class="cc-lg-dot" style="background:#ffb340"></div>High</div>
+              <div class="cc-lg-item"><div class="cc-lg-dot" style="background:#4f7cff"></div>Medium</div>
+              <div class="cc-lg-item"><div class="cc-lg-dot" style="background:#00e5a0"></div>Low</div>
+            </div>
+          </div>
+          <canvas id="ch-scatter" height="200"></canvas>
+        </div>
+        <!-- Agency × Drift radar -->
+        <div class="chart-card">
+          <div class="cc-head">
+            <div><div class="cc-title">Agency Risk Radar</div><div class="cc-sub">Average composite drift by regulator</div></div>
+          </div>
+          <canvas id="ch-radar" height="200"></canvas>
+        </div>
+      </div>
+
+      <!-- NEW: Agency × Year heatmap -->
+      <div class="chart-card" style="margin-bottom:18px">
+        <div class="cc-head"><div><div class="cc-title">Agency × Year Activity Heatmap</div><div class="cc-sub">Regulation count per agency per year (darker = more active)</div></div></div>
+        <div class="heatmap-wrap" id="heatmap-container">
+          <div style="font-size:11px;color:var(--text3);padding:20px 0">Building heatmap…</div>
+        </div>
+      </div>
+
+      <!-- Top 12 horizontal bar -->
+      <div class="chart-card">
+        <div class="cc-head"><div><div class="cc-title">Top 12 — Composite Drift Score</div><div class="cc-sub">Weighted TF-IDF + JSD + Wasserstein</div></div></div>
+        <canvas id="ch-top12" height="200"></canvas>
+      </div>
+    </div>
+
+    <!-- ══ ALERTS ══ -->
+    <div class="view" id="view-alerts">
+      <div class="sh" style="margin-bottom:16px">
+        <div><div class="sh-title">Active Alerts</div><div class="sh-sub">Regulations flagged for compliance review</div></div>
+        <button class="tb-btn" onclick="loadAlerts()">↺ Refresh</button>
+      </div>
+      <div id="alerts-list">
+        <div class="empty-card"><div class="empty-icon">◎</div><div class="empty-title">Loading alerts…</div><div class="shimmer"></div></div>
+      </div>
+    </div>
+
+    <!-- ══ STACK ══ -->
+    <div class="view" id="view-stack">
+      <div class="sh" style="margin-bottom:18px">
+        <div><div class="sh-title">Technology Stack</div><div class="sh-sub">Production infrastructure powering ComplianceIQ</div></div>
+      </div>
+      <div class="stack-grid">
+        <div class="stack-card"><span class="stack-icon">🧠</span><div><div class="stack-name">LangChain + Ollama</div><div class="stack-desc">Local LLM pipeline — plain-English summaries and dollar-impact estimation. Zero cloud API cost.</div><span class="stack-tag">AI/ML</span></div></div>
+        <div class="stack-card"><span class="stack-icon">🗄️</span><div><div class="stack-name">TimescaleDB</div><div class="stack-desc">Time-series PostgreSQL for regulation version history. Hypertables for fast range queries over 10+ years.</div><span class="stack-tag">Database</span></div></div>
+        <div class="stack-card"><span class="stack-icon">🔍</span><div><div class="stack-name">ChromaDB</div><div class="stack-desc">Vector store for semantic search across 3,500+ regulation embeddings. Cosine similarity retrieval.</div><span class="stack-tag">Vector DB</span></div></div>
+        <div class="stack-card"><span class="stack-icon">⚡</span><div><div class="stack-name">FastAPI + asyncpg</div><div class="stack-desc">Fully async REST API with Pydantic v2 schemas, OpenAPI docs, and WebSocket streaming.</div><span class="stack-tag">API</span></div></div>
+        <div class="stack-card"><span class="stack-icon">📐</span><div><div class="stack-name">TF-IDF · JSD · Wasserstein</div><div class="stack-desc">Three-method drift ensemble with bootstrap 95% CI over 60 samples per regulation pair.</div><span class="stack-tag">ML/Stats</span></div></div>
+        <div class="stack-card"><span class="stack-icon">🌊</span><div><div class="stack-name">Apache Airflow</div><div class="stack-desc">Daily DAG fetches Federal Register at 07:00 UTC. Monday 14-day catch-up run.</div><span class="stack-tag">Orchestration</span></div></div>
+        <div class="stack-card"><span class="stack-icon">🐳</span><div><div class="stack-name">Docker + HuggingFace Spaces</div><div class="stack-desc">Single-container deployment — Postgres, ChromaDB, Airflow, uvicorn in one image.</div><span class="stack-tag">Infrastructure</span></div></div>
+        <div class="stack-card"><span class="stack-icon">📡</span><div><div class="stack-name">Federal Register API</div><div class="stack-desc">Real-time ingestion from api.federalregister.gov — all banking &amp; finance rule types.</div><span class="stack-tag">Data Source</span></div></div>
+        <div class="stack-card"><span class="stack-icon">🔗</span><div><div class="stack-name">Alembic Migrations</div><div class="stack-desc">Versioned schema with composite PKs for TimescaleDB hypertable compatibility.</div><span class="stack-tag">Schema</span></div></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+</div>
+
+<!-- MODAL -->
+<div class="modal-bg" id="modal" onclick="closeModalBg(event)">
+  <div class="modal">
+    <div class="modal-head">
+      <div><div class="modal-title" id="m-title">Regulation Detail</div><div class="modal-doc" id="m-doc"></div></div>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-body" id="m-body"></div>
   </div>
 </div>
 
-<!-- ── Stats strip ───────────────────────────────────────────── -->
-<div class="stats">
-  <div class="stat">
-    <div class="stat-value" id="total-regs">—</div>
-    <div class="stat-label">Regulations tracked</div>
-  </div>
-  <div class="stat">
-    <div class="stat-value" id="flagged-count">—</div>
-    <div class="stat-label">Flagged for review</div>
-  </div>
-  <div class="stat">
-    <div class="stat-value" id="agency-count">—</div>
-    <div class="stat-label">Regulatory agencies</div>
-  </div>
-  <div class="stat">
-    <div class="stat-value">3</div>
-    <div class="stat-label">Detection methods</div>
-  </div>
-  <div class="stat">
-    <div class="stat-value">178</div>
-    <div class="stat-label">Tests passing</div>
-  </div>
-</div>
-
-<!-- ── How it works ─────────────────────────────────────────── -->
-<section id="how-it-works">
-  <h2>How it works</h2>
-  <p class="section-sub">Four steps from a published regulation to a dollar figure on your desk.</p>
-  <div class="steps">
-    <div class="step">
-      <div class="step-icon">📡</div>
-      <h3>1. Fetch</h3>
-      <p>Every day, a pipeline pulls the latest rules from the Federal Register, FDIC, and Federal Reserve APIs — automatically, no manual reading required.</p>
-    </div>
-    <div class="step">
-      <div class="step-icon">🔬</div>
-      <h3>2. Detect change</h3>
-      <p>Three mathematical methods measure how much the language changed from the previous version. Small edits score low. New capital requirements score high.</p>
-    </div>
-    <div class="step">
-      <div class="step-icon">⚖️</div>
-      <h3>3. Measure impact</h3>
-      <p>Causal inference (the same technique used in economics research) estimates how much the regulation will change your bank's risk-weighted assets in dollars.</p>
-    </div>
-    <div class="step">
-      <div class="step-icon">🤖</div>
-      <h3>4. Explain</h3>
-      <p>An AI agent reads the full regulation and writes a plain-English summary: which business lines are affected, which CFR sections changed, and what to do next.</p>
-    </div>
-  </div>
-</section>
-
-<!-- ── Live feed ─────────────────────────────────────────────── -->
-<section id="live-feed">
-  <h2>Live Regulation Feed</h2>
-  <p class="section-sub">Real data from the database, updated continuously. Risk level is based on how much the regulation's language changed from the previous version.</p>
-
-  <div class="filters">
-    <button class="filter-btn active" onclick="filterRegs('all', this)">All Regulations</button>
-    <button class="filter-btn" onclick="filterRegs('high', this)">🔴 High Risk</button>
-    <button class="filter-btn" onclick="filterRegs('medium', this)">🟡 Medium Risk</button>
-    <button class="filter-btn" onclick="filterRegs('low', this)">🟢 Low Risk</button>
-    <button class="filter-btn" onclick="filterRegs('capital', this)">Capital</button>
-    <button class="filter-btn" onclick="filterRegs('aml', this)">AML</button>
-    <button class="filter-btn" onclick="filterRegs('consumer_protection', this)">Consumer</button>
-  </div>
-
-  <div id="reg-grid" class="reg-grid">
-    <div class="loading">
-      <div class="spinner"></div>
-      <div>Loading live regulations…</div>
-    </div>
-  </div>
-</section>
-
-<!-- ── Glossary ──────────────────────────────────────────────── -->
-<section id="glossary">
-  <h2>What do these numbers mean?</h2>
-  <p class="section-sub">Plain-English definitions for every metric on this page.</p>
-  <div class="explainer">
-    <h3>Risk &amp; Change Detection</h3>
-    <div class="term-grid">
-      <div class="term">
-        <div class="term-name">Drift Score (0–1)</div>
-        <div class="term-def">How different the new regulation text is from the old one. 0 = identical. 1 = completely rewritten. Above 0.15 triggers a review flag.</div>
-      </div>
-      <div class="term">
-        <div class="term-name">JSD Score</div>
-        <div class="term-def">Jensen-Shannon Divergence — measures how the statistical distribution of words changed. Catches subtle rewording that drift score might miss.</div>
-      </div>
-      <div class="term">
-        <div class="term-name">Wasserstein Score</div>
-        <div class="term-def">Earth Mover's Distance — measures how far the meaning "moved". High scores mean the topic shifted significantly, not just the wording.</div>
-      </div>
-      <div class="term">
-        <div class="term-name">Flagged for Review</div>
-        <div class="term-def">Any regulation where the drift score crosses the 0.15 threshold. These are sent to compliance officers for manual review first.</div>
-      </div>
-      <div class="term">
-        <div class="term-name">Confidence Interval</div>
-        <div class="term-def">The range we're 95% sure the true drift score falls within. A narrow band means the measurement is reliable. A wide band means more data is needed.</div>
-      </div>
-      <div class="term">
-        <div class="term-name">ATT Estimate ($M)</div>
-        <div class="term-def">Average Treatment Effect — the causal estimate of how much this regulation will change a bank's Risk-Weighted Assets in millions of dollars.</div>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- ── Footer ────────────────────────────────────────────────── -->
-<footer>
-  <p>ComplianceIQ · Built with FastAPI, TimescaleDB, ChromaDB, LangGraph &amp; econml</p>
-  <p style="margin-top:.5rem">
-    <a href="/docs">API Documentation</a> ·
-    <a href="https://github.com/Jainishpatel1019/Complianceiq" target="_blank">GitHub</a>
-  </p>
-</footer>
+<div class="toast" id="toast"></div>
 
 <script>
-  const BASE = '';   // same origin
-  let allRegs = [];
-  let currentFilter = 'all';
+// ══ STATE ══
+let _regs = [], _sort = 'date', _flagged = false, _q = ''
+let _charts = {}, _chartsBuilt = false, _analyticsDone = false, _poll = null, _syncPoll = null
 
-  function riskLevel(score) {
-    if (!score) return 'low';
-    if (score > 0.25) return 'high';
-    if (score > 0.12) return 'medium';
-    return 'low';
+const NAV_META = {
+  dashboard:{t:'Dashboard',s:'Regulatory intelligence overview'},
+  feed:{t:'Regulation Feed',s:'All monitored regulations, date-ordered'},
+  analytics:{t:'Analytics',s:'Drift metrics, timelines and exposure analysis'},
+  alerts:{t:'Alerts',s:'Flagged regulations requiring immediate review'},
+  stack:{t:'Tech Stack',s:'Infrastructure powering ComplianceIQ'},
+}
+
+// ── Chart.js defaults ──
+Chart.defaults.color = '#364f72'
+Chart.defaults.borderColor = 'rgba(79,124,255,.08)'
+Chart.defaults.font.family = 'Inter'
+Chart.defaults.font.size = 11
+
+const TOOLTIP_DEFAULTS = {
+  backgroundColor:'#091426',borderColor:'rgba(79,124,255,.28)',borderWidth:1,
+  titleColor:'#eef2ff',bodyColor:'#7a8eb5',padding:10,cornerRadius:8,
+}
+const SCALE_DEFAULTS = {
+  x:{grid:{color:'rgba(79,124,255,.05)'},ticks:{color:'#364f72',font:{size:10}}},
+  y:{grid:{color:'rgba(79,124,255,.05)'},ticks:{color:'#364f72',font:{size:10}}},
+}
+const PAL = ['#4f7cff','#9d6cff','#00e5a0','#ffb340','#ff5c7c','#22d3ee','#fb923c','#818cf8','#34d399','#f472b6','#a78bfa','#60a5fa']
+
+// ── Utils ──
+async function api(url) {
+  try { const r = await fetch(url); const t = await r.text(); if (!t||(t[0]!=='['&&t[0]!=='{')) return null; return JSON.parse(t) } catch { return null }
+}
+function dc(d){return d>=.65?'c':d>=.4?'h':d>=.2?'m':'l'}
+function dco(d){return d>=.65?'#ff5c7c':d>=.4?'#ffb340':d>=.2?'#4f7cff':'#00e5a0'}
+function dbg(d){return d>=.65?'rgba(255,92,124,.09)':d>=.4?'rgba(255,179,64,.07)':d>=.2?'rgba(79,124,255,.07)':'rgba(0,229,160,.05)'}
+function fmtI(lo,hi){const f=v=>v>=1000?`$${(v/1000).toFixed(1)}T`:`$${v.toFixed(1)}B`;if(lo&&hi)return`${f(lo)}–${f(hi)}`;if(hi)return`~${f(hi)}`;if(lo)return`~${f(lo)}`;return null}
+function animN(el,target,dur=900){const s=Date.now();const t=()=>{const p=Math.min((Date.now()-s)/dur,1);const e=1-Math.pow(1-p,3);el.textContent=Math.round(target*e).toLocaleString();if(p<1)requestAnimationFrame(t)};requestAnimationFrame(t)}
+function toast(msg,type='info'){const t=document.getElementById('toast');t.className=`toast ${type} show`;t.textContent=msg;clearTimeout(t._t);t._t=setTimeout(()=>t.className='toast',3800)}
+function destroyChart(id){if(_charts[id]){_charts[id].destroy();delete _charts[id]}}
+
+// ── Clock ──
+function tickClock(){const d=new Date();document.getElementById('tb-time').textContent=d.toUTCString().slice(17,25)+' UTC'}
+tickClock();setInterval(tickClock,1000)
+
+// ── Nav ──
+function nav(id){
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'))
+  document.getElementById('view-'+id)?.classList.add('active')
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'))
+  const labels={dashboard:'Dashboard',feed:'Regulation',analytics:'Analytics',alerts:'Alerts',stack:'Tech',docs:'API'}
+  document.querySelectorAll('.nav-item').forEach(n=>{if(n.textContent.trim().startsWith(labels[id]||id))n.classList.add('active')})
+  const m=NAV_META[id]||{t:id,s:''}
+  document.getElementById('top-title').textContent=m.t
+  document.getElementById('top-sub').textContent=m.s
+  document.querySelector('.content').scrollTop=0
+  document.getElementById('search').value='';_q=''
+  if(id==='feed')renderFeed()
+  if(id==='analytics')buildAnalyticsCharts()
+  if(id==='alerts')loadAlerts()
+}
+
+// ── Data ──
+async function loadData(){
+  const data=await api('/api/v1/change-scores?limit=2000&sort=date')
+  if(!Array.isArray(data)||!data.length)return false
+  _regs=data;return true
+}
+async function refresh(){
+  const ok=await loadData()
+  if(ok){renderDashboard();if(!_chartsBuilt){buildDashCharts();_chartsBuilt=true}updateBadges();document.getElementById('view-feed').querySelector('#feed-list').innerHTML=''}
+  return ok
+}
+
+// ── Stats poll ──
+async function pollStats(){
+  const s=await api('/api/v1/change-scores/stats')
+  if(!s||typeof s!=='object')return
+  const tot=s.total_regulations||0,flag=s.flagged||0,ag=s.agencies||0
+  document.getElementById('sb-total').textContent=tot.toLocaleString()
+  document.getElementById('sb-flagged').textContent=flag.toLocaleString()
+  document.getElementById('sb-agencies').textContent=ag.toLocaleString()
+  if(tot>_regs.length)await refresh()
+  if(s.seeding_complete&&_poll){clearInterval(_poll);_poll=null}
+}
+
+// ── Dashboard render ──
+function renderDashboard(){
+  if(!_regs.length)return
+  let imp=0;_regs.forEach(r=>imp+=r.impact_high_m||0)
+  const tot=_regs.length,flag=_regs.filter(r=>r.flagged_for_analysis).length
+  const ags=[...new Set(_regs.map(r=>r.agency))].length
+  const avgDrift=(_regs.reduce((s,r)=>s+(r.composite_score||0),0)/tot)||0
+
+  const ke=document.getElementById('k-total')
+  if(ke&&ke.textContent==='—'){
+    animN(ke,tot);animN(document.getElementById('k-flagged'),flag);animN(document.getElementById('k-agencies'),ags)
+    document.getElementById('k-impact').textContent=imp>0?`$${(imp/1000).toFixed(0)}B`:'—'
+    document.getElementById('k-avgdrift').textContent=(avgDrift*100).toFixed(1)+'%'
+    document.getElementById('sb-drift').textContent=(avgDrift*100).toFixed(1)+'%'
+  } else {
+    document.getElementById('k-total').textContent=tot.toLocaleString()
+    document.getElementById('k-flagged').textContent=flag.toLocaleString()
+    document.getElementById('k-agencies').textContent=ags.toLocaleString()
+    document.getElementById('k-impact').textContent=imp>0?`$${(imp/1000).toFixed(0)}B`:'—'
+    document.getElementById('k-avgdrift').textContent=(avgDrift*100).toFixed(1)+'%'
+    document.getElementById('sb-drift').textContent=(avgDrift*100).toFixed(1)+'%'
   }
 
-  function riskLabel(level) {
-    return { high: '🔴 High Risk', medium: '🟡 Medium Risk', low: '🟢 Low Risk' }[level];
-  }
+  // Quick stat row
+  const byT={final_rule:0,proposed_rule:0,notice:0,other:0}
+  _regs.forEach(r=>{const t=r.regulation_type||'other';if(byT[t]!==undefined)byT[t]++;else byT.other++})
+  document.getElementById('q-final').textContent=(byT.final_rule||0).toLocaleString()
+  document.getElementById('q-prop').textContent=(byT.proposed_rule||0).toLocaleString()
+  document.getElementById('q-notice').textContent=(byT.notice||0).toLocaleString()
+  document.getElementById('q-sig').textContent=_regs.filter(r=>r.is_significant).length.toLocaleString()
 
-  function fmtDate(iso) {
-    if (!iso) return '—';
-    return new Date(iso).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
-  }
-
-  function agencyColor(agency) {
-    const map = { OCC: '#3b82f6', FDIC: '#8b5cf6', FRB: '#06b6d4', CFPB: '#f59e0b', FinCEN: '#10b981' };
-    return map[agency] || '#64748b';
-  }
-
-  function buildCard(reg) {
-    const cs = reg.latest_change_score || {};
-    const drift = cs.drift_score || 0;
-    const level = riskLevel(drift);
-    const pct = Math.min(Math.round(drift * 100), 100);
-    const barColor = level === 'high' ? '#ef4444' : level === 'medium' ? '#f59e0b' : '#22c55e';
-    const typeName = (reg.regulation_type || 'general').replace('_', ' ');
-
-    return `
-      <div class="reg-card ${level}-risk" data-risk="${level}" data-type="${reg.regulation_type || ''}">
-        <div class="card-header">
-          <div class="card-title">${reg.title}</div>
-          <span class="risk-badge risk-${level}">${level}</span>
+  // Top 5 drifters
+  const top=[..._regs].sort((a,b)=>(b.composite_score||0)-(a.composite_score||0)).slice(0,5)
+  document.getElementById('dash-top-regs').innerHTML=top.map(r=>{
+    const d=r.composite_score||r.drift_score||0,col=dco(d)
+    const imp2=fmtI(r.impact_low_m,r.impact_high_m)
+    return `<div class="reg-card ${dc(d)}" onclick="openModal(${JSON.stringify(r).replace(/"/g,'&quot;')})">
+      <div class="rc-inner">
+        <div class="drift-ring dr-${dc(d)}">
+          <div class="dr-num" style="color:${col}">${Math.round(d*100)}</div>
+          <div class="dr-lbl" style="color:${col}">drift</div>
         </div>
-        <div class="card-meta">
-          <span class="meta-tag" style="color:${agencyColor(reg.agency)};border-color:${agencyColor(reg.agency)}40">${reg.agency}</span>
-          <span class="meta-tag">${typeName}</span>
-          <span class="meta-tag">${fmtDate(reg.publication_date)}</span>
-          ${cs.flagged_for_analysis ? '<span class="meta-tag" style="color:#fca5a5;border-color:#fca5a580">⚑ Flagged</span>' : ''}
+        <div class="rc-body">
+          <div class="rc-title-row">
+            <div class="rc-title">${r.title}</div>
+            <div class="pills"><span class="pill ${r.regulation_type==='final_rule'?'p-rule':r.regulation_type==='proposed_rule'?'p-prop':'p-not'}">${r.regulation_type==='final_rule'?'Final':r.regulation_type==='proposed_rule'?'Proposed':'Notice'}</span>${r.flagged_for_analysis?'<span class="pill p-flag">⚑ Flagged</span>':''}</div>
+          </div>
+          <div class="rc-meta">
+            <span class="rc-mi">🏛 ${r.agency}</span>
+            ${r.publication_date?`<span class="rc-mi">📅 ${r.publication_date}</span>`:''}
+            ${r.is_significant?'<span class="pill p-sig">Significant</span>':''}
+          </div>
+          <div class="rc-foot">
+            <div class="db-wrap"><div class="db-fill" style="width:${Math.round(d*100)}%;background:${col}"></div></div>
+            ${imp2?`<span class="imp-tag">${imp2}</span>`:''}
+          </div>
         </div>
+      </div>
+    </div>`
+  }).join('')
+}
 
-        ${drift ? `
-        <div class="drift-bar-wrap">
-          <div class="drift-bar-label">
-            <span>Language change from previous version</span>
-            <span style="color:${barColor};font-weight:700">${pct}%</span>
-          </div>
-          <div class="drift-bar-track">
-            <div class="drift-bar-fill" style="width:${pct}%;background:${barColor}"></div>
-          </div>
-        </div>
-        <div class="card-metrics">
-          <div class="metric">
-            <div class="metric-label">Drift Score</div>
-            <div class="metric-value" style="color:${barColor}">${drift.toFixed(3)}</div>
-          </div>
-          <div class="metric">
-            <div class="metric-label">Stat. Significance</div>
-            <div class="metric-value">${cs.jsd_p_value ? (cs.jsd_p_value < 0.05 ? '✓ Significant' : 'Not significant') : '—'}</div>
-          </div>
-          <div class="metric">
-            <div class="metric-label">JSD Score</div>
-            <div class="metric-value">${cs.jsd_score ? cs.jsd_score.toFixed(3) : '—'}</div>
-          </div>
-          <div class="metric">
-            <div class="metric-label">Wasserstein</div>
-            <div class="metric-value">${cs.wasserstein_score ? cs.wasserstein_score.toFixed(3) : '—'}</div>
-          </div>
-        </div>
-        ` : `<div style="color:var(--muted);font-size:.85rem">No version changes recorded yet.</div>`}
-      </div>`;
+// ── Dashboard charts ──
+function buildDashCharts(){
+  if(!_regs.length)return
+
+  // Sparklines
+  const byYr={};_regs.forEach(r=>{const y=(r.publication_date||'').slice(0,4);if(y)(byYr[y]=(byYr[y]||0)+1)})
+  const yrs=Object.keys(byYr).sort().slice(-8)
+  const mkSpark=(id,data,color)=>{
+    destroyChart(id)
+    const ctx=document.getElementById(id)
+    if(!ctx)return
+    _charts[id]=new Chart(ctx,{type:'line',data:{labels:yrs,datasets:[{data,borderColor:color,borderWidth:1.5,fill:true,backgroundColor:color+'22',tension:.4,pointRadius:0}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{enabled:false}},scales:{x:{display:false},y:{display:false}},animation:{duration:600}}})
   }
+  const byYrFlag={};_regs.forEach(r=>{const y=(r.publication_date||'').slice(0,4);if(y&&r.flagged_for_analysis)(byYrFlag[y]=(byYrFlag[y]||0)+1)})
+  const byYrImp={};_regs.forEach(r=>{const y=(r.publication_date||'').slice(0,4);if(y)(byYrImp[y]=(byYrImp[y]||0)+(r.impact_high_m||0))})
+  const byYrAg={};_regs.forEach(r=>{const y=(r.publication_date||'').slice(0,4);if(y){const s=new Set((byYrAg[y]||[]));s.add(r.agency);byYrAg[y]=s}})
+  const byYrDrift={};_regs.forEach(r=>{const y=(r.publication_date||'').slice(0,4);if(y){(byYrDrift[y]||(byYrDrift[y]=[]))[byYrDrift[y]?.length||0]=r.composite_score||0}})
 
-  function renderGrid(regs) {
-    const grid = document.getElementById('reg-grid');
-    if (!regs.length) {
-      grid.innerHTML = '<div class="loading">No regulations match this filter.</div>';
-      return;
+  mkSpark('sp-total',yrs.map(y=>byYr[y]||0),'#4f7cff')
+  mkSpark('sp-flag',yrs.map(y=>byYrFlag[y]||0),'#ff5c7c')
+  mkSpark('sp-imp',yrs.map(y=>byYrImp[y]||0),'#ffb340')
+  mkSpark('sp-ag',yrs.map(y=>byYrAg[y]?.size||0),'#00e5a0')
+  const driftByYr=yrs.map(y=>{const arr=byYrDrift[y]||[];return arr.length?arr.reduce((s,v)=>s+v,0)/arr.length:0})
+  mkSpark('sp-drift',driftByYr,'#9d6cff')
+
+  // Timeline bar
+  destroyChart('ch-timeline')
+  const now=new Date().getFullYear().toString()
+  _charts['ch-timeline']=new Chart(document.getElementById('ch-timeline'),{
+    type:'bar',
+    data:{labels:yrs,datasets:[{data:yrs.map(y=>byYr[y]||0),
+      backgroundColor:yrs.map(y=>y===now?'rgba(79,124,255,.9)':'rgba(79,124,255,.35)'),
+      borderColor:yrs.map(y=>y===now?'#4f7cff':'rgba(79,124,255,.6)'),
+      borderWidth:1,borderRadius:5,borderSkipped:false}]},
+    options:{responsive:true,maintainAspectRatio:true,animation:{duration:700,easing:'easeOutQuart'},plugins:{legend:{display:false},tooltip:{...TOOLTIP_DEFAULTS}},scales:SCALE_DEFAULTS}
+  })
+
+  // Stacked type by year
+  const byT_yr={final_rule:{},proposed_rule:{},notice:{}}
+  _regs.forEach(r=>{const y=(r.publication_date||'').slice(0,4);const t=r.regulation_type||'notice';if(byT_yr[t])byT_yr[t][y]=(byT_yr[t][y]||0)+1})
+  destroyChart('ch-stacked')
+  _charts['ch-stacked']=new Chart(document.getElementById('ch-stacked'),{
+    type:'bar',
+    data:{labels:yrs,datasets:[
+      {label:'Final Rule',data:yrs.map(y=>byT_yr.final_rule[y]||0),backgroundColor:'rgba(79,124,255,.7)',borderColor:'#4f7cff',borderWidth:0,borderRadius:{topLeft:3,topRight:3},stack:'s'},
+      {label:'Proposed',data:yrs.map(y=>byT_yr.proposed_rule[y]||0),backgroundColor:'rgba(157,108,255,.7)',borderColor:'#9d6cff',borderWidth:0,stack:'s'},
+      {label:'Notice',data:yrs.map(y=>byT_yr.notice[y]||0),backgroundColor:'rgba(34,211,238,.5)',borderColor:'#22d3ee',borderWidth:0,borderRadius:{bottomLeft:0,bottomRight:0},stack:'s'},
+    ]},
+    options:{responsive:true,maintainAspectRatio:true,animation:{duration:700},plugins:{legend:{display:true,position:'top',labels:{color:'#7a8eb5',font:{size:10},boxWidth:10,padding:10}},tooltip:{...TOOLTIP_DEFAULTS}},scales:{...SCALE_DEFAULTS}}
+  })
+
+  // Agency polar/doughnut
+  const byAg={};_regs.forEach(r=>{const a=(r.agency||'?').split(' ')[0];byAg[a]=(byAg[a]||0)+1})
+  const agE=Object.entries(byAg).sort((a,b)=>b[1]-a[1]).slice(0,8)
+  destroyChart('ch-agency')
+  _charts['ch-agency']=new Chart(document.getElementById('ch-agency'),{
+    type:'polarArea',
+    data:{labels:agE.map(e=>e[0]),datasets:[{data:agE.map(e=>e[1]),backgroundColor:PAL.map(c=>c+'99'),borderColor:PAL,borderWidth:1.5}]},
+    options:{responsive:true,maintainAspectRatio:true,animation:{duration:800},plugins:{legend:{display:true,position:'right',labels:{color:'#7a8eb5',font:{size:10},boxWidth:8,padding:8}},tooltip:{...TOOLTIP_DEFAULTS}},scales:{r:{grid:{color:'rgba(79,124,255,.08)'},ticks:{color:'#364f72',font:{size:9},backdropColor:'transparent'}}}}
+  })
+
+  // Histogram
+  const buckets=Array(10).fill(0)
+  _regs.forEach(r=>{const d=r.composite_score||r.drift_score||0;buckets[Math.min(9,Math.floor(d*10))]++})
+  const hL=['0–10%','10–20%','20–30%','30–40%','40–50%','50–60%','60–70%','70–80%','80–90%','90%+']
+  const hC=['#00e5a0','#00e5a0','#4f7cff','#4f7cff','#4f7cff','#ffb340','#ffb340','#ff5c7c','#ff5c7c','#ff5c7c']
+  destroyChart('ch-hist')
+  _charts['ch-hist']=new Chart(document.getElementById('ch-hist'),{
+    type:'bar',
+    data:{labels:hL,datasets:[{data:buckets,backgroundColor:hC.map(c=>c+'77'),borderColor:hC,borderWidth:1.5,borderRadius:4,borderSkipped:false}]},
+    options:{responsive:true,maintainAspectRatio:true,animation:{duration:700},plugins:{legend:{display:false},tooltip:{...TOOLTIP_DEFAULTS}},scales:SCALE_DEFAULTS}
+  })
+}
+
+// ── Analytics charts ──
+function buildAnalyticsCharts(){
+  if(!_regs.length||_analyticsDone)return
+  _analyticsDone=true
+
+  const byYr={};_regs.forEach(r=>{const y=(r.publication_date||'').slice(0,4);if(y)(byYr[y]=(byYr[y]||0)+1)})
+  const yrs=Object.keys(byYr).sort()
+  const counts=yrs.map(y=>byYr[y])
+  let cum=0;const cumCounts=counts.map(v=>(cum+=v))
+
+  // Dual-axis line: annual + cumulative
+  destroyChart('ch-tl-big')
+  _charts['ch-tl-big']=new Chart(document.getElementById('ch-tl-big'),{
+    type:'bar',
+    data:{labels:yrs,datasets:[
+      {type:'bar',label:'Annual',data:counts,backgroundColor:'rgba(79,124,255,.4)',borderColor:'#4f7cff',borderWidth:1.5,borderRadius:4,yAxisID:'y'},
+      {type:'line',label:'Cumulative',data:cumCounts,borderColor:'#00e5a0',backgroundColor:'rgba(0,229,160,.06)',fill:true,tension:.35,pointRadius:3,pointBackgroundColor:'#00e5a0',yAxisID:'y2'},
+    ]},
+    options:{responsive:true,maintainAspectRatio:true,animation:{duration:800},plugins:{legend:{display:true,position:'top',labels:{color:'#7a8eb5',font:{size:10},boxWidth:10,padding:12}},tooltip:{...TOOLTIP_DEFAULTS}},
+      scales:{
+        x:{...SCALE_DEFAULTS.x},
+        y:{...SCALE_DEFAULTS.y,position:'left'},
+        y2:{...SCALE_DEFAULTS.y,position:'right',grid:{display:false}},
+      }
     }
-    grid.innerHTML = regs.map(buildCard).join('');
-  }
+  })
 
-  function filterRegs(filter, btn) {
-    currentFilter = filter;
-    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
+  // Agency horizontal bar
+  const byAg={};_regs.forEach(r=>{const a=(r.agency||'?').split(' ')[0];byAg[a]=(byAg[a]||0)+1})
+  const agE=Object.entries(byAg).sort((a,b)=>b[1]-a[1]).slice(0,8)
+  destroyChart('ch-ag-big')
+  _charts['ch-ag-big']=new Chart(document.getElementById('ch-ag-big'),{
+    type:'bar',
+    data:{labels:agE.map(e=>e[0]),datasets:[{data:agE.map(e=>e[1]),backgroundColor:PAL.map(c=>c+'88'),borderColor:PAL,borderWidth:1.5,borderRadius:4,borderSkipped:false}]},
+    options:{indexAxis:'y',responsive:true,maintainAspectRatio:true,animation:{duration:700},plugins:{legend:{display:false},tooltip:{...TOOLTIP_DEFAULTS}},scales:SCALE_DEFAULTS}
+  })
 
-    let filtered = allRegs;
-    if (filter === 'high') filtered = allRegs.filter(r => riskLevel(r.latest_change_score?.drift_score) === 'high');
-    else if (filter === 'medium') filtered = allRegs.filter(r => riskLevel(r.latest_change_score?.drift_score) === 'medium');
-    else if (filter === 'low') filtered = allRegs.filter(r => riskLevel(r.latest_change_score?.drift_score) === 'low');
-    else if (filter !== 'all') filtered = allRegs.filter(r => r.regulation_type === filter);
+  // Histogram big
+  const buckets=Array(10).fill(0)
+  _regs.forEach(r=>{const d=r.composite_score||r.drift_score||0;buckets[Math.min(9,Math.floor(d*10))]++})
+  const hL=['0–10','10–20','20–30','30–40','40–50','50–60','60–70','70–80','80–90','90+']
+  const hC=['#00e5a0','#00e5a0','#4f7cff','#4f7cff','#4f7cff','#ffb340','#ffb340','#ff5c7c','#ff5c7c','#ff5c7c']
+  destroyChart('ch-hs-big')
+  _charts['ch-hs-big']=new Chart(document.getElementById('ch-hs-big'),{
+    type:'bar',
+    data:{labels:hL,datasets:[{data:buckets,backgroundColor:hC.map(c=>c+'77'),borderColor:hC,borderWidth:1.5,borderRadius:4,borderSkipped:false}]},
+    options:{responsive:true,maintainAspectRatio:true,animation:{duration:700},plugins:{legend:{display:false},tooltip:{...TOOLTIP_DEFAULTS}},scales:SCALE_DEFAULTS}
+  })
 
-    renderGrid(filtered);
-  }
+  // Impact doughnut
+  const byT={final_rule:0,proposed_rule:0,notice:0}
+  _regs.forEach(r=>{const t=r.regulation_type||'final_rule';if(byT[t]!==undefined)byT[t]+=(r.impact_high_m||0)})
+  destroyChart('ch-imp-big')
+  _charts['ch-imp-big']=new Chart(document.getElementById('ch-imp-big'),{
+    type:'doughnut',
+    data:{labels:['Final Rules','Proposed Rules','Notices'],datasets:[{data:Object.values(byT),backgroundColor:['rgba(79,124,255,.75)','rgba(157,108,255,.75)','rgba(34,211,238,.6)'],borderColor:'#060e1c',borderWidth:2}]},
+    options:{responsive:true,maintainAspectRatio:true,cutout:'58%',animation:{duration:800},plugins:{legend:{display:true,position:'bottom',labels:{color:'#7a8eb5',font:{size:10},padding:10}},tooltip:{...TOOLTIP_DEFAULTS,callbacks:{label:c=>`$${(c.parsed/1000).toFixed(1)}T`}}}}
+  })
 
-  async function loadData() {
-    try {
-      const res = await fetch(`${BASE}/api/v1/regulations?page_size=50`);
-      const data = await res.json();
-      allRegs = data.items || data.regulations || data || [];
-
-      // Sort: flagged first, then by drift score desc
-      allRegs.sort((a, b) => {
-        const da = a.latest_change_score?.drift_score || 0;
-        const db = b.latest_change_score?.drift_score || 0;
-        return db - da;
-      });
-
-      // Update stats
-      document.getElementById('total-regs').textContent = data.total || allRegs.length;
-      const flagged = allRegs.filter(r => r.latest_change_score?.flagged_for_analysis).length;
-      document.getElementById('flagged-count').textContent = flagged;
-      const agencies = new Set(allRegs.map(r => r.agency)).size;
-      document.getElementById('agency-count').textContent = agencies;
-
-      renderGrid(allRegs);
-    } catch (err) {
-      document.getElementById('reg-grid').innerHTML =
-        '<div class="loading">Could not load data. Make sure the API is running.</div>';
-      console.error(err);
+  // SCATTER: JSD vs Wasserstein
+  const scatterData=_regs.filter(r=>r.jsd_score!=null&&r.wasserstein_score!=null).slice(0,500)
+  const scatterGroups={c:[],h:[],m:[],l:[]}
+  scatterData.forEach(r=>{
+    const d=r.composite_score||0
+    const pt={x:+(r.jsd_score||0).toFixed(4),y:+(r.wasserstein_score||0).toFixed(4),label:r.document_number}
+    scatterGroups[dc(d)].push(pt)
+  })
+  destroyChart('ch-scatter')
+  _charts['ch-scatter']=new Chart(document.getElementById('ch-scatter'),{
+    type:'scatter',
+    data:{datasets:[
+      {label:'Critical (drift≥65%)',data:scatterGroups.c,backgroundColor:'rgba(255,92,124,.6)',borderColor:'#ff5c7c',borderWidth:0,pointRadius:3.5,pointHoverRadius:5},
+      {label:'High (40–65%)',data:scatterGroups.h,backgroundColor:'rgba(255,179,64,.55)',borderColor:'#ffb340',borderWidth:0,pointRadius:3,pointHoverRadius:5},
+      {label:'Medium (20–40%)',data:scatterGroups.m,backgroundColor:'rgba(79,124,255,.5)',borderColor:'#4f7cff',borderWidth:0,pointRadius:2.5,pointHoverRadius:4},
+      {label:'Low (<20%)',data:scatterGroups.l,backgroundColor:'rgba(0,229,160,.45)',borderColor:'#00e5a0',borderWidth:0,pointRadius:2,pointHoverRadius:4},
+    ]},
+    options:{responsive:true,maintainAspectRatio:true,animation:{duration:600},plugins:{legend:{display:true,position:'top',labels:{color:'#7a8eb5',font:{size:10},boxWidth:8,padding:8}},tooltip:{...TOOLTIP_DEFAULTS,callbacks:{label:c=>`JSD: ${c.parsed.x.toFixed(3)} | Wass: ${c.parsed.y.toFixed(3)}`}}},
+      scales:{
+        x:{...SCALE_DEFAULTS.x,title:{display:true,text:'JSD Score',color:'#364f72',font:{size:10}}},
+        y:{...SCALE_DEFAULTS.y,title:{display:true,text:'Wasserstein',color:'#364f72',font:{size:10}}},
+      }
     }
-  }
+  })
 
-  loadData();
+  // RADAR: Agency average drift
+  const agDrift={};_regs.forEach(r=>{if(!agDrift[r.agency])agDrift[r.agency]={sum:0,cnt:0};agDrift[r.agency].sum+=(r.composite_score||0);agDrift[r.agency].cnt++})
+  const agDriftE=Object.entries(agDrift).map(([a,v])=>({a:a.split(' ')[0],d:v.sum/v.cnt})).sort((a,b)=>b.d-a.d).slice(0,8)
+  destroyChart('ch-radar')
+  _charts['ch-radar']=new Chart(document.getElementById('ch-radar'),{
+    type:'radar',
+    data:{labels:agDriftE.map(e=>e.a),datasets:[{label:'Avg Drift',data:agDriftE.map(e=>Math.round(e.d*100)),fill:true,backgroundColor:'rgba(157,108,255,.15)',borderColor:'#9d6cff',pointBackgroundColor:'#9d6cff',pointRadius:3,borderWidth:2}]},
+    options:{responsive:true,maintainAspectRatio:true,animation:{duration:700},plugins:{legend:{display:false},tooltip:{...TOOLTIP_DEFAULTS,callbacks:{label:c=>`${c.parsed.r}% avg drift`}}},
+      scales:{r:{grid:{color:'rgba(79,124,255,.1)'},angleLines:{color:'rgba(79,124,255,.1)'},pointLabels:{color:'#7a8eb5',font:{size:10}},ticks:{color:'#364f72',font:{size:9},backdropColor:'transparent'},suggestedMin:0,suggestedMax:70}}
+    }
+  })
+
+  // HEATMAP: Agency × Year
+  buildHeatmap()
+
+  // Top 12 horizontal bar
+  const top12=[..._regs].sort((a,b)=>(b.composite_score||0)-(a.composite_score||0)).slice(0,12)
+  destroyChart('ch-top12')
+  _charts['ch-top12']=new Chart(document.getElementById('ch-top12'),{
+    type:'bar',
+    data:{labels:top12.map(r=>(r.document_number||'').slice(0,20)),
+      datasets:[{data:top12.map(r=>Math.round((r.composite_score||0)*100)),
+        backgroundColor:top12.map(r=>dco(r.composite_score||0)+'88'),
+        borderColor:top12.map(r=>dco(r.composite_score||0)),
+        borderWidth:1.5,borderRadius:4,borderSkipped:false}]},
+    options:{indexAxis:'y',responsive:true,maintainAspectRatio:true,animation:{duration:700},plugins:{legend:{display:false},tooltip:{...TOOLTIP_DEFAULTS,callbacks:{label:c=>`Drift: ${c.parsed.x}%`}}},
+      scales:{x:{...SCALE_DEFAULTS.x,max:100},y:{...SCALE_DEFAULTS.y,ticks:{color:'#364f72',font:{size:10,family:'JetBrains Mono'}}}}}
+  })
+}
+
+function buildHeatmap(){
+  const yrs=[];for(let y=2015;y<=2026;y++)yrs.push(y.toString())
+  const agNames=[...new Set(_regs.map(r=>r.agency?.split(' ')[0]))].filter(Boolean).sort().slice(0,10)
+  const counts={}
+  _regs.forEach(r=>{const a=r.agency?.split(' ')[0];const y=(r.publication_date||'').slice(0,4);if(a&&y){if(!counts[a])counts[a]={};counts[a][y]=(counts[a][y]||0)+1}})
+  const maxVal=Math.max(...agNames.flatMap(a=>yrs.map(y=>counts[a]?.[y]||0)))
+
+  const el=document.getElementById('heatmap-container')
+  let html=`<table class="heatmap-table"><thead><tr><th class="hm-label"></th>${yrs.map(y=>`<th class="hm-yr">${y}</th>`).join('')}</tr></thead><tbody>`
+  agNames.forEach(ag=>{
+    html+=`<tr><td class="hm-label">${ag}</td>`
+    yrs.forEach(y=>{
+      const v=counts[ag]?.[y]||0
+      const intensity=maxVal>0?v/maxVal:0
+      const alpha=(.08+intensity*.65).toFixed(2)
+      const bg=`rgba(79,124,255,${alpha})`
+      const col=intensity>.5?'#eef2ff':intensity>.25?'#7a8eb5':'#364f72'
+      html+=`<td class="hm-cell" style="background:${bg};color:${col};min-width:36px" title="${ag} ${y}: ${v} regs">${v||''}</td>`
+    })
+    html+='</tr>'
+  })
+  html+='</tbody></table>'
+  el.innerHTML=html
+}
+
+// ── Feed ──
+function renderFeed(src){
+  const list=src||_regs,el=document.getElementById('feed-list')
+  if(!list.length){
+    el.innerHTML=`<div class="empty-card" id="seed-state">
+      <div class="empty-icon">🌱</div><div class="empty-title">Database seeding…</div>
+      <div class="empty-sub">Generating 3,500 regulations — auto-refreshes every 10s</div>
+      <div class="shimmer"></div>
+      <button class="action-btn" id="seed-btn" onclick="forceSeed()">🌱 Seed Now</button>
+    </div>`;return
+  }
+  let shown=[...list]
+  if(_flagged)shown=shown.filter(r=>r.flagged_for_analysis)
+  if(_q){const q=_q.toLowerCase();shown=shown.filter(r=>(r.title+r.agency+r.document_number).toLowerCase().includes(q))}
+  shown.sort((a,b)=>_sort==='date'?((b.publication_date||'')>(a.publication_date||'')?1:-1)||(b.composite_score||0)-(a.composite_score||0):(b.composite_score||0)-(a.composite_score||0))
+  document.getElementById('feed-count').textContent=`${shown.length.toLocaleString()} regulations`
+  const byYr={};shown.forEach(r=>{const y=(r.publication_date||'????').slice(0,4);(byYr[y]||(byYr[y]=[])).push(r)})
+  const now=new Date().getFullYear().toString()
+  el.innerHTML=Object.keys(byYr).sort((a,b)=>+b-+a).map(yr=>`
+    <div>
+      <div class="year-band">
+        <div class="year-chip ${yr===now?'cur':''}">${yr===now?'● ':''} ${yr}</div>
+        <div class="year-div"></div>
+        <span class="year-ct">${byYr[yr].length} regulations</span>
+      </div>
+      ${byYr[yr].map(r=>buildCard(r)).join('')}
+    </div>`).join('')
+}
+
+function buildCard(r){
+  const d=r.composite_score||r.drift_score||0,cls=dc(d),col=dco(d)
+  const imp=fmtI(r.impact_low_m,r.impact_high_m)
+  const id='r'+Math.random().toString(36).slice(2)
+  const v1=r.v1_snippet||'',v2=r.v2_snippet||''
+  const pT=r.regulation_type==='final_rule'?'p-rule':r.regulation_type==='proposed_rule'?'p-prop':'p-not'
+  const pL=r.regulation_type==='final_rule'?'Final Rule':r.regulation_type==='proposed_rule'?'Proposed':'Notice'
+  return `<div class="reg-card ${cls}" id="${id}">
+    <div class="rc-inner">
+      <div class="drift-ring dr-${cls}">
+        <div class="dr-num" style="color:${col}">${Math.round(d*100)}</div>
+        <div class="dr-lbl" style="color:${col}">drift</div>
+      </div>
+      <div class="rc-body">
+        <div class="rc-title-row">
+          <div class="rc-title">${r.title}</div>
+          <div class="pills">
+            <span class="pill ${pT}">${pL}</span>
+            ${r.flagged_for_analysis?'<span class="pill p-flag">⚑</span>':''}
+            ${r.jsd_significant?'<span class="pill p-sig">Sig.</span>':''}
+          </div>
+        </div>
+        <div class="rc-meta">
+          <span class="rc-mi">🏛 ${r.agency}</span>
+          ${r.publication_date?`<span class="rc-mi">📅 ${r.publication_date}</span>`:''}
+          <span class="rc-mi" style="font-family:'JetBrains Mono',monospace;font-size:10px">${r.document_number}</span>
+        </div>
+        <div class="rc-foot">
+          <div class="db-wrap"><div class="db-fill" style="width:${Math.round(d*100)}%;background:${col}"></div></div>
+          ${imp?`<span class="imp-tag">${imp}</span>`:''}
+          <div class="rc-acts">
+            ${(v1||v2)?`<button class="rc-btn" onclick="toggleProof('${id}',event)"><span id="${id}-arr">▼</span> Proof</button>`:''}
+            <button class="rc-btn prim" onclick="openModal(${JSON.stringify(r).replace(/"/g,'&quot;')})">Detail →</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    ${(v1||v2)?`<div class="proof-panel" id="${id}-proof">
+      <div class="proof-box p-old"><div class="proof-lbl">Before (v1)</div><div class="proof-txt">${(v1||'').slice(0,260)}…</div></div>
+      <div class="proof-box p-new"><div class="proof-lbl">After (v2)</div><div class="proof-txt">${(v2||'').slice(0,260)}…</div></div>
+    </div>`:''}
+  </div>`
+}
+function toggleProof(id,e){e.stopPropagation();const p=document.getElementById(id+'-proof'),a=document.getElementById(id+'-arr');if(!p)return;p.classList.toggle('open');if(a)a.textContent=p.classList.contains('open')?'▲':'▼'}
+function setSort(s){_sort=s;document.getElementById('fc-date').classList.toggle('on',s==='date');document.getElementById('fc-drift').classList.toggle('on',s==='drift');renderFeed()}
+function toggleFlag(){_flagged=!_flagged;document.getElementById('fc-flag').classList.toggle('on',_flagged);renderFeed()}
+function onSearch(q){_q=q;renderFeed()}
+
+// ── Badges ──
+function updateBadges(){const f=_regs.filter(r=>r.flagged_for_analysis).length;const b=document.getElementById('alerts-badge');if(b&&f>0){b.textContent=f;b.style.display='block'}}
+
+// ── Alerts ──
+async function loadAlerts(){
+  const data=await api('/api/v1/change-scores?flagged_only=true&limit=200&sort=drift')
+  const el=document.getElementById('alerts-list')
+  if(!Array.isArray(data)||!data.length){el.innerHTML=`<div class="empty-card"><div class="empty-icon">✅</div><div class="empty-title">No active alerts</div><div class="empty-sub">All monitored regulations within normal thresholds</div></div>`;return}
+  el.innerHTML=data.map(r=>{
+    const d=r.composite_score||r.drift_score||0
+    const aCls=d>=.65?'a-crit':d>=.4?'a-high':'a-info'
+    const ico=d>=.65?'🚨':d>=.4?'⚠️':'ℹ️'
+    return `<div class="alert-card">
+      <div class="alert-ico ${aCls}">${ico}</div>
+      <div class="alert-body">
+        <div class="alert-title">${r.title}</div>
+        <div class="alert-meta">${r.agency} · ${r.publication_date||''} · Drift ${Math.round(d*100)}% · ${(r.regulation_type||'').replace(/_/g,' ')}</div>
+      </div>
+      <button class="alert-cta" onclick="openModal(${JSON.stringify(r).replace(/"/g,'&quot;')})">Review →</button>
+    </div>`
+  }).join('')
+}
+
+// ── Modal ──
+function openModal(r){
+  const d=r.composite_score||r.drift_score||0,col=dco(d)
+  const imp=fmtI(r.impact_low_m,r.impact_high_m)
+  const v1=r.v1_snippet||'',v2=r.v2_snippet||''
+  document.getElementById('m-title').textContent=r.title
+  document.getElementById('m-doc').textContent=`${r.document_number} · ${r.agency}`
+  document.getElementById('m-body').innerHTML=`
+    <div class="modal-section">
+      <div class="modal-section-label">Drift Analysis</div>
+      <div class="detail-row">
+        <div class="detail-cell"><div class="detail-cell-label">Composite Score</div><div class="detail-cell-value" style="color:${col};font-size:24px;font-weight:900">${Math.round(d*100)}%</div></div>
+        <div class="detail-cell"><div class="detail-cell-label">Significance</div><div class="detail-cell-value">${r.jsd_significant?`<span style="color:var(--red)">✓ Significant (p<0.05)</span>`:`<span style="color:var(--text3)">Not Significant</span>`}</div></div>
+        <div class="detail-cell"><div class="detail-cell-label">JSD Score</div><div class="detail-cell-value">${r.jsd_score!=null?r.jsd_score.toFixed(4):'—'}</div></div>
+        <div class="detail-cell"><div class="detail-cell-label">Wasserstein</div><div class="detail-cell-value">${r.wasserstein_score!=null?r.wasserstein_score.toFixed(4):'—'}</div></div>
+        <div class="detail-cell"><div class="detail-cell-label">Published</div><div class="detail-cell-value">${r.publication_date||'—'}</div></div>
+        <div class="detail-cell"><div class="detail-cell-label">Rule Type</div><div class="detail-cell-value">${(r.regulation_type||'').replace(/_/g,' ')}</div></div>
+      </div>
+    </div>
+    ${imp?`<div class="modal-section"><div class="modal-section-label">Financial Impact</div>
+      <div class="impact-banner"><span style="font-size:24px">💰</span>
+        <div><div class="impact-num">${imp}</div><div class="impact-sub">Estimated capital exposure</div></div>
+      </div></div>`:''}
+    ${r.plain_english?`<div class="modal-section"><div class="modal-section-label">Plain English Summary</div><div class="plain-box">${r.plain_english}</div></div>`:''}
+    ${(v1||v2)?`<div class="modal-section"><div class="modal-section-label">Change Proof — What Changed</div>
+      <div class="diff-row">
+        <div class="diff-box diff-old"><div class="diff-lbl">Before (v1)</div><div class="diff-txt">${(v1||'').slice(0,500)}${v1.length>500?'…':''}</div></div>
+        <div class="diff-box diff-new"><div class="diff-lbl">After (v2)</div><div class="diff-txt">${(v2||'').slice(0,500)}${v2.length>500?'…':''}</div></div>
+      </div></div>`:''}
+    ${r.abstract?`<div class="modal-section"><div class="modal-section-label">Abstract</div><div style="font-size:13px;color:var(--text2);line-height:1.7">${(r.abstract||'').slice(0,500)}…</div></div>`:''}
+  `
+  document.getElementById('modal').classList.add('open')
+  document.body.style.overflow='hidden'
+}
+function closeModal(){document.getElementById('modal').classList.remove('open');document.body.style.overflow=''}
+function closeModalBg(e){if(e.target===document.getElementById('modal'))closeModal()}
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal()})
+
+// ── Sync ──
+async function doSync(){
+  const btn=document.getElementById('sync-btn'),lbl=document.getElementById('sync-lbl'),ico=document.getElementById('sync-ico')
+  btn.disabled=true;lbl.textContent='Syncing…';ico.textContent='⏳'
+  toast('Fetching latest Federal Register publications…','info')
+  try{
+    await fetch('/api/v1/refresh',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({lookback_days:7,source:'auto'})})
+    if(_syncPoll)clearInterval(_syncPoll)
+    _syncPoll=setInterval(async()=>{
+      const s=await api('/api/v1/refresh/status');if(!s)return
+      if(s.status==='done'){clearInterval(_syncPoll);btn.disabled=false;lbl.textContent='Sync Federal Register';ico.textContent='↺';toast(`✅ Sync complete — ${s.inserted} new regulations added`,'ok');if(s.inserted>0)await refresh()}
+      else if(s.status==='error'){clearInterval(_syncPoll);btn.disabled=false;lbl.textContent='Sync Federal Register';ico.textContent='↺';toast('Sync failed — see logs','err')}
+    },2000)
+  }catch{btn.disabled=false;lbl.textContent='Sync Federal Register';ico.textContent='↺'}
+}
+async function forceSeed(){
+  const btn=document.getElementById('seed-btn')
+  if(btn){btn.disabled=true;btn.textContent='⏳ Seeding…'}
+  toast('Starting seed — ~60 seconds…','info')
+  await fetch('/api/v1/refresh',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({lookback_days:90,source:'offline'})}).catch(()=>{})
+  const poll=setInterval(async()=>{if(await refresh()){clearInterval(poll);document.getElementById('seed-state')?.remove();toast('✅ Database seeded!','ok')}},4000)
+  setTimeout(()=>clearInterval(poll),180000)
+}
+
+// ── INIT ──
+;(async()=>{
+  pollStats()
+  _poll=setInterval(pollStats,9000)
+  const ok=await refresh()
+  if(!ok){
+    let shown=false
+    const r=setInterval(async()=>{if(await refresh()){clearInterval(r);return}if(!shown){shown=true;renderFeed([])}},10000)
+    setTimeout(()=>{if(!shown){shown=true;renderFeed([])}},12000)
+  }
+})()
 </script>
 </body>
 </html>
