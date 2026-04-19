@@ -213,18 +213,31 @@ async def get_federal_register_live(
     }
 
     # ── 1. Query our own DB first (fast, reliable) ────────────────────────────
-    query = (
+    # Use two separate queries to avoid NULL ordering issues with outer join.
+    # First get matching regulation IDs sorted by drift, then fetch details.
+    from sqlalchemy import nullslast
+
+    cs_sub = (
+        select(ChangeScore.regulation_id, ChangeScore.drift_score)
+        .order_by(nullslast(desc(ChangeScore.drift_score)))
+        .limit(limit * 2)  # fetch extra to account for filter
+        .subquery()
+    )
+    base_q = (
         select(Regulation, ChangeScore)
         .join(ChangeScore, ChangeScore.regulation_id == Regulation.id, isouter=True)
         .where(Regulation.source == "federal_register")
-        .order_by(desc(ChangeScore.drift_score))
+        .order_by(nullslast(desc(ChangeScore.drift_score)))
         .limit(limit)
     )
     if agency:
-        agency_upper = agency.upper()
-        query = query.where(Regulation.agency.ilike(f"%{agency_upper}%"))
+        base_q = base_q.where(Regulation.agency.ilike(f"%{agency.upper()}%"))
 
-    rows = (await db.execute(query)).all()
+    try:
+        rows = (await db.execute(base_q)).all()
+    except Exception as exc:
+        log.warning("federal_register_db_query_failed", error=str(exc))
+        rows = []
 
     results = []
     for reg, cs in rows:

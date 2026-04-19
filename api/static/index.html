@@ -519,99 +519,124 @@ function drawImpactChart(enrichment) {
   el.innerHTML = svg
 }
 
+// ── Safe JSON fetch ───────────────────────────────────────────────────────────
+// Returns parsed JSON or null — never throws, handles HTML error pages.
+async function safeJson(url) {
+  try {
+    const resp = await fetch(url)
+    const text = await resp.text()
+    if (!text || text.trimStart()[0] !== '[' && text.trimStart()[0] !== '{') return null
+    return JSON.parse(text)
+  } catch { return null }
+}
+
 // ── RENDER DB CARDS ───────────────────────────────────────────────────────────
 async function loadDbCards() {
+  const container = document.getElementById('db-cards')
   try {
-    const resp = await fetch('/api/v1/change-scores?limit=1000')
-    const scores = await resp.json()
+    // Fetch top 50 first (fast), then silently load more
+    let scores = await safeJson('/api/v1/change-scores?limit=50')
+    if (!Array.isArray(scores)) scores = []
 
-    // Update stats bar
-    document.getElementById('stat-total').textContent = scores.length
-    const flagged = scores.filter(s => s.flagged_for_analysis).length
-    document.getElementById('stat-flagged').textContent = flagged
+    // Update stats bar immediately with what we have
+    if (scores.length > 0) {
+      document.getElementById('stat-total').textContent = scores.length + '+'
+      const flagged = scores.filter(s => s.flagged_for_analysis).length
+      document.getElementById('stat-flagged').textContent = flagged + '+'
+    }
 
-    // Recompute capital at risk from raw_metadata impact ranges
-    // Shown as $XT+ where X is rounded sum of mid-point estimates in $B
+    // Compute capital impact from known enrichment
     let totalImpactB = 0
     for (const s of scores) {
       const e = ENRICHMENT[s.document_number]
-      if (e) {
-        totalImpactB += (e.impact_low + e.impact_high) / 2
-      } else if (s.drift_score > 0.15) {
-        // Heuristic for bulk-seeded regs: $2B average for flagged
-        totalImpactB += 2
-      }
+      if (e) totalImpactB += (e.impact_low + e.impact_high) / 2
+      else if (s.drift_score > 0.15) totalImpactB += 2
     }
-    const impactLabel = totalImpactB >= 1000
-      ? `$${(totalImpactB/1000).toFixed(1)}T+`
-      : `$${Math.round(totalImpactB)}B+`
-    document.getElementById('stat-impact').textContent = impactLabel
+    if (totalImpactB > 0) {
+      const impactLabel = totalImpactB >= 1000
+        ? `$${(totalImpactB/1000).toFixed(1)}T+` : `$${Math.round(totalImpactB)}B+`
+      document.getElementById('stat-impact').textContent = impactLabel
+    }
 
-    // Draw charts
-    drawDriftChart(scores)
-    drawImpactChart(ENRICHMENT)
+    // Draw charts from what we have
+    if (scores.length > 0) {
+      drawDriftChart(scores)
+      drawImpactChart(ENRICHMENT)
+    }
 
-    const container = document.getElementById('db-cards')
-    if (!scores.length) {
-      container.innerHTML = '<div style="text-align:center;padding:3rem;color:var(--muted);">No regulations in database. Run the seed pipeline first.</div>'
+    if (scores.length === 0) {
+      container.innerHTML = '<div style="text-align:center;padding:3rem;color:var(--muted);"><p style="font-size:2rem;margin-bottom:.75rem;">⏳</p><p>Database seeding in progress…</p><p style="font-size:.8rem;margin-top:.5rem;">The bulk seed runs in the background after startup. Refresh in ~2 minutes.</p></div>'
       return
     }
 
-    container.innerHTML = scores.map(r => {
-      const e = ENRICHMENT[r.document_number] || {}
-      const sev = severity(r.drift_score || 0)
-      const col = driftColour(r.drift_score || 0)
-      const impactMid = e.impact_low && e.impact_high ? ((e.impact_low + e.impact_high) / 2).toFixed(0) : null
-      const ciLow = Math.max(0, (r.drift_ci_low || r.drift_score * 0.85))
-      const ciHigh = Math.min(1, (r.drift_ci_high || r.drift_score * 1.15))
+    // Render the 10 deep-analysed ones (from ENRICHMENT keys)
+    const enrichedKeys = new Set(Object.keys(ENRICHMENT))
+    const enriched = scores.filter(r => enrichedKeys.has(r.document_number))
+    const displayList = enriched.length > 0 ? enriched : scores.slice(0, 10)
 
-      return `
-      <div class="reg-card ${sev}" onclick='openModal(${JSON.stringify(r).replace(/'/g,"&#39;")})'>
-        <div class="reg-top">
-          <div>
-            <div class="reg-meta">
-              <span class="reg-docnum">${r.document_number || '—'}</span>
-              <span class="reg-agency">${r.agency || '—'}</span>
-              ${r.flagged_for_analysis ? '<span style="font-size:.7rem;color:#fbbf24;">⚠ Flagged</span>' : ''}
-            </div>
-            <div class="reg-title">${r.title || 'Untitled Regulation'}</div>
-          </div>
-          <div class="badges">
-            <span class="badge badge-drift-${sev}">Drift ${pct(r.drift_score)}</span>
-            ${r.jsd_significant ? `<span class="badge badge-jsd">JSD ✓ sig</span>` : ''}
-          </div>
-        </div>
+    container.innerHTML = displayList.map(r => renderRegCard(r)).join('')
 
-        ${impactMid ? `
-        <div class="impact-box">
-          <div class="impact-label">💰 Estimated Financial Impact</div>
-          <div class="impact-num">${e.impact_currency}${impactMid}${e.impact_suffix}</div>
-          <div class="impact-range">Range: ${e.impact_currency}${e.impact_low}${e.impact_suffix} – ${e.impact_currency}${e.impact_high}${e.impact_suffix}</div>
-          ${e.affected ? `<div class="impact-institutions">Affects ${e.affected}</div>` : ''}
-        </div>` : ''}
-
-        <div class="ci-bar-wrap">
-          <div class="ci-bar-label"><span>Semantic Drift  95% CI</span><span style="font-mono">${r.drift_display || pct(r.drift_score)}</span></div>
-          <div class="ci-track">
-            <div class="ci-fill" style="left:${ciLow*100}%;width:${(ciHigh-ciLow)*100}%;background:${col};opacity:0.25;"></div>
-            <div class="ci-center" style="left:calc(${(r.drift_score||0)*100}% - 5px);background:${col};"></div>
-          </div>
-        </div>
-
-        <div class="reg-measures">
-          <span>Drift <b>${r.drift_display || pct(r.drift_score)}</b></span>
-          <span>JSD <b style="color:${r.jsd_significant?'#fbbf24':'inherit'}">${r.jsd_score ? pct(r.jsd_score) : '—'}</b></span>
-          <span>W₂ <b>${r.wasserstein_score ? pct(r.wasserstein_score) : '—'}</b></span>
-          <span>JSD p <b>${r.jsd_p_value ? r.jsd_p_value.toFixed(3) : '—'}</b></span>
-          <span>Composite <b>${r.composite_score ? pct(r.composite_score) : '—'}</b></span>
-        </div>
-
-        ${e.plain_english ? `<div class="plain-english"><strong>💡 Plain English</strong>${e.plain_english}</div>` : ''}
-      </div>`
-    }).join('')
   } catch(err) {
-    document.getElementById('db-cards').innerHTML = `<div style="color:#f87171;padding:1rem;">Error loading data: ${err.message}</div>`
+    container.innerHTML = `<div style="color:#f87171;padding:1rem;border-radius:8px;border:1px solid rgba(239,68,68,0.3);">
+      <b>Could not load regulations</b><br/><span style="font-size:.8rem;opacity:.7;">${err.message}</span>
+      <br/><button onclick="loadDbCards()" style="margin-top:.5rem;background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);color:#f87171;padding:.3rem .75rem;border-radius:6px;cursor:pointer;font-size:.8rem;">Retry</button>
+    </div>`
   }
+}
+
+function renderRegCard(r) {
+  const e = ENRICHMENT[r.document_number] || {}
+  const sev = severity(r.drift_score || 0)
+  const col = driftColour(r.drift_score || 0)
+  const impactMid = e.impact_low && e.impact_high ? ((e.impact_low + e.impact_high) / 2).toFixed(0) : null
+  const ciLow  = Math.max(0,   r.drift_ci_low  ?? (r.drift_score || 0) * 0.85)
+  const ciHigh = Math.min(1.0, r.drift_ci_high ?? (r.drift_score || 0) * 1.15)
+  // Safely escape for onclick attribute
+  const safeR = JSON.stringify(r).replace(/'/g, "&#39;").replace(/</g,'&lt;').replace(/>/g,'&gt;')
+
+  return `
+  <div class="reg-card ${sev}" onclick='openModal(${safeR})'>
+    <div class="reg-top">
+      <div>
+        <div class="reg-meta">
+          <span class="reg-docnum">${r.document_number || '—'}</span>
+          <span class="reg-agency">${r.agency || '—'}</span>
+          ${r.flagged_for_analysis ? '<span style="font-size:.7rem;color:#fbbf24;">⚠ Flagged</span>' : ''}
+        </div>
+        <div class="reg-title">${r.title || 'Untitled Regulation'}</div>
+      </div>
+      <div class="badges">
+        <span class="badge badge-drift-${sev}">Drift ${pct(r.drift_score)}</span>
+        ${r.jsd_significant ? '<span class="badge badge-jsd">JSD ✓ sig</span>' : ''}
+      </div>
+    </div>
+
+    ${impactMid ? `
+    <div class="impact-box">
+      <div class="impact-label">💰 Estimated Financial Impact</div>
+      <div class="impact-num">${e.impact_currency || '$'}${impactMid}${e.impact_suffix || 'B'}</div>
+      <div class="impact-range">Range: ${e.impact_currency || '$'}${e.impact_low}${e.impact_suffix || 'B'} – ${e.impact_currency || '$'}${e.impact_high}${e.impact_suffix || 'B'}</div>
+      ${e.affected ? `<div class="impact-institutions">Affects ${e.affected}</div>` : ''}
+    </div>` : ''}
+
+    <div class="ci-bar-wrap">
+      <div class="ci-bar-label"><span>Semantic Drift  95% CI</span><span>${r.drift_display || pct(r.drift_score)}</span></div>
+      <div class="ci-track">
+        <div class="ci-fill" style="left:${ciLow*100}%;width:${(ciHigh-ciLow)*100}%;background:${col};opacity:0.25;"></div>
+        <div class="ci-center" style="left:calc(${(r.drift_score||0)*100}% - 5px);background:${col};"></div>
+      </div>
+    </div>
+
+    <div class="reg-measures">
+      <span>Drift <b>${r.drift_display || pct(r.drift_score)}</b></span>
+      <span>JSD <b style="color:${r.jsd_significant?'#fbbf24':'inherit'}">${r.jsd_score ? pct(r.jsd_score) : '—'}</b></span>
+      <span>W₂ <b>${r.wasserstein_score ? pct(r.wasserstein_score) : '—'}</b></span>
+      <span>JSD p <b>${r.jsd_p_value ? r.jsd_p_value.toFixed(3) : '—'}</b></span>
+      <span>Composite <b>${r.composite_score ? pct(r.composite_score) : '—'}</b></span>
+    </div>
+
+    ${e.plain_english ? `<div class="plain-english"><strong>💡 Plain English</strong>${e.plain_english}</div>` : ''}
+  </div>`
 }
 
 // ── FEDERAL REGISTER LIVE ─────────────────────────────────────────────────────
@@ -619,12 +644,13 @@ let frLoaded = false
 async function loadFrCards() {
   if (frLoaded) return
   frLoaded = true
+  const container = document.getElementById('fr-cards')
   try {
-    const resp = await fetch('/api/v1/regulations/federal-register')
-    const regs = await resp.json()
-    const container = document.getElementById('fr-cards')
+    const data = await safeJson('/api/v1/regulations/federal-register?limit=50')
+    const regs = Array.isArray(data) ? data : []
+
     if (!regs.length) {
-      container.innerHTML = '<div style="text-align:center;padding:3rem;color:var(--muted);">No results from Federal Register API.</div>'
+      container.innerHTML = '<div style="text-align:center;padding:3rem;color:var(--muted);"><p style="font-size:1.5rem;margin-bottom:.5rem;">⏳</p><p>Full database is still seeding in the background.</p><p style="font-size:.8rem;margin-top:.5rem;">Regulations will appear here within 2–3 minutes of first launch.</p><button onclick="frLoaded=false;loadFrCards()" style="margin-top:1rem;background:rgba(37,99,235,0.15);border:1px solid rgba(37,99,235,0.3);color:#60a5fa;padding:.4rem 1rem;border-radius:6px;cursor:pointer;font-size:.85rem;">↺ Retry</button></div>'
       return
     }
     container.innerHTML = regs.map(r => {
@@ -672,7 +698,10 @@ async function loadFrCards() {
       </div>`
     }).join('')
   } catch(err) {
-    document.getElementById('fr-cards').innerHTML = `<div style="color:#f87171;padding:1rem;">Error: ${err.message}</div>`
+    container.innerHTML = `<div style="color:#f87171;padding:1rem;border-radius:8px;border:1px solid rgba(239,68,68,0.3);">
+      <b>Could not load full database</b><br/><span style="font-size:.8rem;opacity:.7;">${err.message}</span>
+      <br/><button onclick="frLoaded=false;loadFrCards()" style="margin-top:.5rem;background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);color:#f87171;padding:.3rem .75rem;border-radius:6px;cursor:pointer;font-size:.8rem;">Retry</button>
+    </div>`
   }
 }
 
@@ -790,20 +819,18 @@ document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModalBt
 let _statsPollTimer = null
 
 async function pollStats() {
-  try {
-    const r = await fetch('/api/v1/change-scores/stats')
-    const s = await r.json()
+  const s = await safeJson('/api/v1/change-scores/stats')
+  if (!s || typeof s !== 'object' || Array.isArray(s)) return
+  if (s.total_regulations > 0) {
     document.getElementById('stat-total').textContent   = s.total_regulations.toLocaleString()
     document.getElementById('stat-flagged').textContent = s.flagged.toLocaleString()
-
-    if (!s.seeding_complete) {
-      // Show a subtle "seeding…" indicator on the total
-      document.getElementById('stat-total').title = 'Seeding in progress — count growing…'
-    } else {
-      clearInterval(_statsPollTimer)
-      document.getElementById('stat-total').title = ''
-    }
-  } catch(e) { /* ignore — will retry */ }
+  }
+  if (s.seeding_complete) {
+    clearInterval(_statsPollTimer)
+    document.getElementById('stat-total').title = ''
+  } else {
+    document.getElementById('stat-total').title = 'Seeding in background — count growing…'
+  }
 }
 
 // ── INIT ──────────────────────────────────────────────────────────────────────
