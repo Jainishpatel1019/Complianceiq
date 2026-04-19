@@ -3,6 +3,14 @@
 *.pem
 *.key
 
+# ── Dev tooling / internal prompts (do not commit) ──────────────────────────
+.cursorrules
+*.cursor*
+*_Master_Prompt*
+*_master_prompt*
+FINSIGHT_MASTER_PROMPT.md
+FinSight_Cursor_Master_Prompt.pdf
+
 # ── Data (tracked by DVC, not git) ──────────────────────────────────────────
 data/raw/
 data/processed/
