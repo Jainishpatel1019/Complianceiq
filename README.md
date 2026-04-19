@@ -10,149 +10,268 @@ pinned: false
 
 # ComplianceIQ
 
-Automated regulatory intelligence for banking compliance teams. Detects changes in US federal banking regulations, quantifies their financial impact using causal inference, and surfaces the results through an interactive dashboard.
+**Live demo:** [jainishp1019-complianceiq.hf.space](https://jainishp1019-complianceiq.hf.space)
 
-**Live demo:** [huggingface.co/spaces/Jainish1019/complianceiq](https://huggingface.co/spaces/Jainish1019/complianceiq) *(demo data: Jan–Jun 2024)*
+ComplianceIQ is a regulatory intelligence platform built for banking compliance teams. It ingests US federal banking regulations daily, detects when the language of a rule has meaningfully changed, estimates the financial cost of that change using causal inference, and surfaces everything through an interactive dashboard.
+
+The project came out of a real problem: US regulators publish around 40 rule updates per week across the Federal Register, FDIC, and CFPB. Most compliance teams read these manually. ComplianceIQ automates the triage step so analysts spend time on the regulations that actually matter.
+
+---
+
+## Screenshots
+
+### Dashboard
+![Dashboard](docs/screenshots/dashboard.png)
+
+### Regulation Feed
+![Regulation Feed](docs/screenshots/regulation-feed.png)
+
+### Analytics
+![Analytics](docs/screenshots/analytics.png)
+
+### Alerts
+![Alerts](docs/screenshots/alerts.png)
 
 ---
 
 ## What it does
 
-US regulators publish ~40 rule changes per week across the Federal Register, FDIC, and CFPB. ComplianceIQ ingests all of them daily and does three things:
+**Change detection** reads the text of each regulation version and computes three complementary scores: semantic drift (sentence embedding cosine distance), Jensen-Shannon divergence on token distributions, and Wasserstein distance on term frequency vectors. Each measure catches a different kind of change. Semantic drift catches rewording, JSD catches vocabulary shift, Wasserstein catches structural changes like reordering. Any regulation scoring above the calibrated 0.15 drift threshold gets flagged for the agent pipeline.
 
-1. **Detects meaningful change** — three complementary measures (semantic drift, JSD, Wasserstein distance) catch changes in meaning, vocabulary, and structure respectively. Anything above the 0.15 drift threshold triggers the agent pipeline.
-2. **Quantifies financial impact** — Difference-in-Differences on FDIC call report data, Synthetic Control for system-wide regulations, and Basel III ΔRWA math with Monte Carlo uncertainty propagation.
-3. **Reasons about impact** — a LangGraph agent runs eight tools (RAG, knowledge graph, causal estimation, Bayesian network scoring) and produces a structured report: *summary, impact score, ΔRWA median + 90% CI, affected business lines, citations, reasoning trace*.
+**Impact quantification** runs causal inference on flagged regulations. For institution-level rules it uses Difference-in-Differences on FDIC call report panel data. For system-wide rules it uses Synthetic Control. For capital adequacy changes it computes Basel III delta-RWA directly using the amended formula with Monte Carlo uncertainty propagation. Every estimate comes with a 90% confidence interval.
 
----
-
-## Stack
-
-| Layer | Technology |
-|---|---|
-| Ingestion | Apache Airflow 2.9, Federal Register API, FDIC BankFind |
-| Storage | PostgreSQL 16 + TimescaleDB, ChromaDB, pgvector |
-| ML | PyTorch Geometric (GAT), pgmpy (Bayesian network), econml (causal), RAGAS (eval) |
-| Agent | LangGraph 0.2, Ollama (mistral:7b, nomic-embed-text, llama3.2:3b) |
-| API | FastAPI, WebSockets |
-| Frontend | React 18, D3.js, Tailwind CSS |
-| Tracking | MLflow |
-| Infra | Docker Compose, Alembic, DVC |
-
-All models run locally via Ollama. No OpenAI or other API keys required.
-
----
-
-## Quickstart
-
-```bash
-git clone https://github.com/Jainish1019/complianceiq
-cd complianceiq
-make setup    # copies .env.example → .env, builds images, pulls Ollama models (~5 min)
-make dev      # starts all 11 services
-```
-
-Services after `make dev`:
-
-| Service | URL |
-|---|---|
-| Dashboard | http://localhost:3000 |
-| API docs | http://localhost:8081/docs |
-| Airflow | http://localhost:8080 |
-| MLflow | http://localhost:5000 |
-| Flower | http://localhost:5555 |
-
-```bash
-make test     # runs the full test suite (178 tests)
-make lint     # ruff + mypy
-make seed-db  # load sample data without running ingestion DAGs
-make down     # stop everything
-```
+**Agent reasoning** is handled by a LangGraph agent that runs eight tools: RAG retrieval from ChromaDB, knowledge graph traversal, causal estimation, Bayesian network impact scoring, FDIC data lookup, citation extraction, business line tagging, and plain-English summarization. The agent produces a structured report with a summary, impact score, delta-RWA estimate, affected business lines, and a full reasoning trace.
 
 ---
 
 ## Architecture
 
-```
-Federal Register API ──┐
-FDIC BankFind API    ──┤──→ Airflow DAGs ──→ PostgreSQL/TimescaleDB
-CFPB API             ──┘         │
-                                  ├──→ Embedding pipeline ──→ ChromaDB
-                                  ├──→ Change detection   ──→ Drift scores
-                                  ├──→ Causal inference   ──→ ΔRWA estimates
-                                  └──→ LangGraph agent    ──→ Impact reports
-                                                                    │
-                                              FastAPI ──────────────┘
-                                                 │
-                                           React dashboard
+```mermaid
+flowchart TD
+    A[Federal Register API] --> D[Airflow DAGs]
+    B[FDIC BankFind API] --> D
+    C[CFPB API] --> D
+
+    D --> E[PostgreSQL + TimescaleDB]
+    D --> F[Embedding Pipeline]
+    D --> G[Change Detection]
+
+    F --> H[ChromaDB]
+    G --> I[Drift Scores]
+    I --> J{Above threshold?}
+
+    J -- Yes --> K[Causal Inference]
+    J -- No --> L[Archive]
+
+    K --> M[LangGraph Agent]
+    H --> M
+    E --> M
+
+    M --> N[Impact Reports]
+    N --> O[FastAPI]
+    E --> O
+    I --> O
+
+    O --> P[React Dashboard]
+    O --> Q[WebSocket Feed]
 ```
 
-Nine Airflow DAGs run on schedule:
+**Data flow summary**
 
-| DAG | Schedule | Purpose |
-|---|---|---|
-| `ingest_sources` | Daily 02:00 UTC | Federal Register + FDIC fetch |
-| `embed_and_index` | Daily 03:00 UTC | Chunk + embed + ChromaDB upsert |
-| `change_detection` | Daily 04:00 UTC | Drift/JSD/Wasserstein scores |
-| `causal_estimation` | Weekly | DiD + Synthetic Control updates |
-| `impact_agent` | Daily 09:00 UTC | LangGraph agent run on flagged docs |
-| `graph_update` | Daily 10:00 UTC | Knowledge graph rebuild + PageRank |
-| `alert_dispatch` | Daily 11:00 UTC | Slack/email for P(High) ≥ 0.8 |
-| `model_registry` | Weekly | MLflow model promotion |
-| `evaluate_pipeline` | Weekly Sat | RAGAS + ablation + calibration |
+Raw regulation text from the Federal Register is ingested daily by Airflow, split into chunks, embedded using `nomic-embed-text` via Ollama, and stored in ChromaDB. Each time a new version of a regulation appears, the change detection pipeline compares it to the previous version and writes drift scores to a TimescaleDB hypertable. Flagged regulations go through the causal inference pipeline and then the LangGraph agent, which produces a final impact report stored in PostgreSQL. FastAPI serves the dashboard and exposes a REST API with WebSocket support for live updates.
 
 ---
 
-## Evaluation
+## Tech stack
 
-Run on a 300-document human-labelled test set + 500 RAG queries:
+| Layer | Tools |
+|---|---|
+| Ingestion | Apache Airflow 2.9, Federal Register API, FDIC BankFind API |
+| Storage | PostgreSQL 16 with TimescaleDB, ChromaDB, pgvector |
+| ML | PyTorch Geometric (graph attention), pgmpy (Bayesian network), econml (causal inference), RAGAS (evaluation) |
+| Agent | LangGraph 0.2, Ollama running mistral:7b, nomic-embed-text, llama3.2:3b |
+| API | FastAPI with async SQLAlchemy, WebSockets |
+| Frontend | React 18, Chart.js, Tailwind CSS |
+| Tracking | MLflow |
+| Infrastructure | Docker Compose, Alembic migrations, DVC for data versioning |
+
+All models run locally through Ollama. No external API keys or paid services are needed.
+
+---
+
+## Quickstart
+
+**Requirements:** Docker, Docker Compose, and around 20 GB of disk space for Ollama model weights.
+
+```bash
+git clone https://github.com/Jainishpatel1019/Complianceiq
+cd Complianceiq
+
+# Set up environment, pull images, pull Ollama models (takes about 5 minutes)
+make setup
+
+# Start all services
+make dev
+```
+
+After `make dev`, the following services are running:
+
+| Service | URL |
+|---|---|
+| Dashboard | http://localhost:3000 |
+| API + docs | http://localhost:8081/docs |
+| Airflow | http://localhost:8080 |
+| MLflow | http://localhost:5000 |
+| Flower (Celery) | http://localhost:5555 |
+
+Other useful commands:
+
+```bash
+make test      # run the full test suite (178 tests)
+make lint      # ruff and mypy checks
+make seed-db   # load sample data without running ingestion DAGs
+make down      # stop all services
+```
+
+---
+
+## Airflow DAGs
+
+Nine DAGs handle the full pipeline on schedule:
+
+| DAG | Schedule | What it does |
+|---|---|---|
+| `ingest_sources` | Daily 02:00 UTC | Fetches new regulations from Federal Register and FDIC |
+| `embed_and_index` | Daily 03:00 UTC | Chunks text, embeds with nomic-embed-text, upserts to ChromaDB |
+| `change_detection` | Daily 04:00 UTC | Computes drift, JSD, and Wasserstein scores for each new version |
+| `causal_estimation` | Weekly | Runs DiD and Synthetic Control on flagged regulations |
+| `impact_agent` | Daily 09:00 UTC | LangGraph agent run on anything flagged by change detection |
+| `graph_update` | Daily 10:00 UTC | Rebuilds the regulatory knowledge graph and updates PageRank scores |
+| `alert_dispatch` | Daily 11:00 UTC | Sends Slack and email alerts for high-impact findings |
+| `model_registry` | Weekly | Promotes best-performing models in MLflow |
+| `evaluate_pipeline` | Weekly Saturday | RAGAS eval, ablation study, and calibration check |
+
+---
+
+## API reference
+
+The FastAPI app runs at port 7860 on HuggingFace and port 8081 locally. Interactive docs are at `/docs`.
+
+**Core endpoints:**
+
+```
+GET  /api/v1/change-scores              Recent change scores sorted by drift or date
+GET  /api/v1/change-scores/{id}         Score history for one regulation
+GET  /api/v1/change-scores/heatmap/{id} Section-level drift heatmap for one regulation
+GET  /api/v1/regulations                Regulation list with filtering and pagination
+GET  /api/v1/regulations/{id}/diff      Side-by-side text diff for two versions
+GET  /api/v1/causal/{id}               Causal impact estimates for one regulation
+GET  /api/v1/graph/snapshot            Knowledge graph snapshot for visualization
+GET  /api/v1/reports/{id}              Full LangGraph agent report
+POST /api/v1/refresh                   Trigger a live fetch from Federal Register
+WS   /ws/agent-trace/{report_id}       Stream agent reasoning in real time
+```
+
+---
+
+## Change detection math
+
+Three measures are combined into a composite score using weights derived from an ablation study (F1 contributions: drift 0.50, JSD 0.30, Wasserstein 0.20).
+
+**Semantic drift** is 1 minus the cosine similarity between sentence embeddings of the two versions. Range 0 to 1. A score of 0.15 or higher triggers the agent pipeline, calibrated on a 300-document labeled test set.
+
+**Jensen-Shannon divergence** measures the difference between token probability distributions. Unlike KL divergence it is symmetric and always finite. Statistical significance is tested using a permutation test with 1000 bootstrap samples.
+
+**Wasserstein distance** (Earth Mover's Distance) on TF-IDF vectors captures structural changes like reordering that leave the vocabulary similar but change what is emphasized.
+
+**Causal inference** uses three methods depending on the rule type. Difference-in-Differences compares treated and control institutions from FDIC call report panel data before and after each regulation's effective date. Synthetic Control is used for system-wide rules where there is no control group. For capital adequacy rules, delta-RWA is computed directly from the Basel III formula using the amended risk weight parameters, with uncertainty propagated through 10,000 Monte Carlo draws.
+
+---
+
+## Evaluation results
+
+Run on a 300-document human-labeled test set and 500 RAG queries:
 
 | Metric | Score |
 |---|---|
-| Change detection F1 (all three measures) | 0.84 |
-| Change detection F1 (drift only, ablation) | 0.71 |
+| Change detection F1 (all three measures combined) | 0.84 |
+| Change detection F1 (semantic drift only, ablation) | 0.71 |
 | RAGAS faithfulness | 0.82 |
 | RAGAS context recall | 0.76 |
-| Drift threshold (95% CI) | 0.15 [0.12, 0.18] |
+| Calibrated drift threshold (95% CI) | 0.15 [0.12, 0.18] |
 
 ---
 
-## Hugging Face deployment
+## HuggingFace deployment
+
+The HF Space runs a slimmed-down 5-service stack without Airflow, MLflow, or Redis. The database is seeded on first startup with 500 pre-generated regulations spanning 2015 to 2026.
 
 ```bash
-# Build pre-seeded demo data locally first (run after ingestion DAGs complete)
-make seed-export   # exports pg_dump + ChromaDB snapshot to data/seed/
+# Export seed data from a local run (after ingestion DAGs have completed)
+make seed-export
 
-# Then deploy to HF Spaces (slimmed 5-service compose, no Airflow/MLflow/Redis)
+# Test the HF compose file locally before pushing
 docker compose -f docker-compose.hf.yml up
 ```
 
-Set these in HF Space secrets: `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB`, `API_SECRET_KEY`.
+Environment variables to set in HF Space secrets: `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB`, `API_SECRET_KEY`.
+
+The startup script (`deployment/start.sh`) starts PostgreSQL, runs Alembic migrations, starts ChromaDB, seeds the database, and launches the FastAPI server. If the seed step fails, the API will self-seed on startup when it detects fewer than 500 records.
 
 ---
 
-## Project layout
+## Project structure
 
 ```
 complianceiq/
-├── api/                    FastAPI app + route handlers
+├── api/
+│   ├── main.py                 FastAPI app, lifespan, CORS, routers
+│   ├── seed.py                 Self-contained async seeder (no external deps)
+│   ├── routes/                 One file per domain area
+│   │   ├── regulations.py
+│   │   ├── change_scores.py
+│   │   ├── causal.py
+│   │   ├── graph.py
+│   │   ├── reports.py
+│   │   └── refresh.py
+│   ├── websockets.py           WebSocket endpoint for agent trace streaming
+│   └── static/                 Single-file dashboard (index.html)
 ├── backend/
-│   ├── agents/             LangGraph impact agent
-│   ├── models/             Change detection, causal, Bayesian network, graph
-│   └── pipelines/          Ingestion, embedding, evaluation
-├── airflow/dags/           9 Airflow DAG files
-├── db/                     SQLAlchemy models + Alembic migrations
-├── frontend/src/           React dashboard
-├── tests/                  178 unit tests (pytest)
-├── docs/                   math_explainer.md, diagrams
-├── data/seed/              Pre-seeded demo data for HF Space
-├── docker-compose.yml      Full local dev (11 services)
-├── docker-compose.hf.yml   HF Spaces slim deploy (5 services)
-└── Makefile
+│   ├── agents/                 LangGraph impact agent and tools
+│   ├── models/                 Change detection, causal inference, Bayesian network, graph
+│   └── pipelines/              Ingestion, embedding, seed, evaluation
+├── airflow/dags/               Nine Airflow DAG files
+├── db/
+│   ├── models.py               SQLAlchemy 2.0 ORM models
+│   └── migrations/             Alembic migration scripts
+├── frontend/src/               React 18 dashboard
+├── tests/                      178 unit tests (pytest)
+├── docs/                       Math explainer, diagrams, screenshots
+├── data/seed/                  Pre-seeded demo data for HF Space
+├── deployment/
+│   └── start.sh                HF Space startup script
+├── docker-compose.yml          Full local dev stack (11 services)
+├── docker-compose.hf.yml       HF Spaces deploy (5 services)
+├── Dockerfile
+├── Makefile
+├── pyproject.toml
+└── alembic.ini
 ```
 
 ---
 
-## Technical write-up
+## Design decisions worth noting
 
-See [`docs/math_explainer.md`](docs/math_explainer.md) for the full explanation of the change detection math, causal inference methods, Bayesian network architecture, and evaluation framework.
+**Why TimescaleDB instead of plain PostgreSQL for change scores?** Change scores are append-only and queried almost always by time range. TimescaleDB's hypertable partitioning gives automatic time-based chunking and compression without changing the SQL interface. The tradeoff is that the hypertable requires a composite primary key including the partition column (`computed_at`), which means `ON CONFLICT DO NOTHING` needs an explicit target.
+
+**Why three drift measures instead of one?** Each measure has blind spots. Semantic drift misses vocabulary shift when the meaning is similar. JSD misses meaning changes that preserve vocabulary. Wasserstein misses changes to rare but legally important terms. Running all three and combining with learned weights pushes F1 from 0.71 (drift alone) to 0.84.
+
+**Why Ollama instead of OpenAI?** Compliance data is sensitive. Running models locally means no regulation text ever leaves the institution's infrastructure. The tradeoff is speed: mistral:7b is slower than GPT-4 but the latency is acceptable for a batch pipeline that runs overnight.
+
+**Why LangGraph instead of a simple chain?** The agent needs to decide which tools to run based on the regulation type. A capital adequacy rule needs the Basel III calculator. A consumer protection rule needs the FDIC institution lookup. LangGraph's graph-based control flow makes it easy to add conditional tool dispatch without hardcoding if-else logic.
+
+---
+
+## Further reading
+
+See [`docs/math_explainer.md`](docs/math_explainer.md) for the full derivations of the change detection math, causal inference methods, Bayesian network structure, and evaluation framework.
