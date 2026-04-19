@@ -37,15 +37,24 @@ class ChangeScoreFull(BaseModel):
     drift_score: float | None
     drift_ci_low: float | None
     drift_ci_high: float | None
-    drift_display: str          # "0.31 ± 0.04"
+    drift_display: str
     jsd_score: float | None
     jsd_p_value: float | None
     jsd_significant: bool
     wasserstein_score: float | None
-    composite_score: float      # weighted average for dashboard ranking
+    composite_score: float
     is_significant: bool
     flagged_for_analysis: bool
     computed_at: str
+    # Rich metadata — used by landing page for change proofs & date ordering
+    publication_date: str | None = None
+    regulation_type: str | None = None
+    plain_english: str | None = None
+    v1_snippet: str | None = None   # first 300 chars of v1 text
+    v2_snippet: str | None = None   # first 300 chars of v2 text
+    impact_low_m: float | None = None
+    impact_high_m: float | None = None
+    affected: str | None = None
 
 
 class HeatmapSection(BaseModel):
@@ -66,34 +75,57 @@ class RegulationHeatmap(BaseModel):
 
 # ── Routes ────────────────────────────────────────────────────────────────────
 
+@router.get("/stats")
+async def get_stats(db: AsyncSession = Depends(get_db_session)):
+    """Return quick summary stats — total regulations, flagged count, agencies."""
+    try:
+        total_regs   = (await db.execute(select(func.count(Regulation.id)))).scalar() or 0
+        total_scores = (await db.execute(select(func.count(ChangeScore.id)))).scalar() or 0
+        flagged      = (await db.execute(
+            select(func.count(ChangeScore.id)).where(ChangeScore.flagged_for_analysis == True)
+        )).scalar() or 0
+        agencies     = (await db.execute(
+            select(func.count(func.distinct(Regulation.agency)))
+        )).scalar() or 0
+        return {
+            "total_regulations":  total_regs,
+            "total_change_scores": total_scores,
+            "flagged":            flagged,
+            "agencies":           agencies,
+            "seeding_complete":   total_regs >= 100,
+        }
+    except Exception as exc:
+        return {"total_regulations": 0, "flagged": 0, "agencies": 0,
+                "total_change_scores": 0, "seeding_complete": False, "error": str(exc)}
+
+
 @router.get("", response_model=list[ChangeScoreFull])
 async def list_change_scores(
-    limit: int = Query(default=50, ge=1, le=200),
+    limit: int = Query(default=500, ge=1, le=2000),
     flagged_only: bool = Query(default=False),
     min_drift: float = Query(default=0.0, ge=0.0, le=1.0),
+    sort: str = Query(default="date", description="Sort order: 'date' (newest first) or 'drift' (highest first)"),
     db: AsyncSession = Depends(get_db_session),
 ) -> list[ChangeScoreFull]:
-    """Return most recent change scores sorted by drift descending.
+    """Return change scores with publication date ordering and rich metadata.
 
-    Args:
-        limit: Max results.
-        flagged_only: If True, only return flagged regulations.
-        min_drift: Only return scores above this drift threshold.
-        db: Injected DB session.
-
-    Returns:
-        List of ChangeScoreFull sorted by drift_score descending.
+    Default sort: newest regulations first (publication_date DESC), then
+    highest drift within the same date. Use sort=drift to rank by severity.
     """
     query = (
         select(ChangeScore, Regulation)
         .join(Regulation, ChangeScore.regulation_id == Regulation.id)
-        .order_by(desc(ChangeScore.drift_score))
         .limit(limit)
     )
     if flagged_only:
         query = query.where(ChangeScore.flagged_for_analysis == True)
     if min_drift > 0:
         query = query.where(ChangeScore.drift_score >= min_drift)
+
+    if sort == "date":
+        query = query.order_by(desc(Regulation.publication_date), desc(ChangeScore.drift_score))
+    else:
+        query = query.order_by(desc(ChangeScore.drift_score))
 
     result = await db.execute(query)
     return [_build_score_schema(cs, reg) for cs, reg in result.all()]
@@ -207,6 +239,10 @@ def _build_score_schema(cs: ChangeScore, reg: Regulation) -> ChangeScoreFull:
     wass = cs.wasserstein_score or 0.0
     composite = round(0.5 * drift + 0.3 * jsd + 0.2 * wass, 4)
 
+    meta = reg.raw_metadata or {}
+    v1   = meta.get("v1_text", "")
+    v2   = reg.full_text or reg.abstract or ""
+
     return ChangeScoreFull(
         score_id=str(cs.id),
         regulation_id=str(cs.regulation_id),
@@ -218,7 +254,7 @@ def _build_score_schema(cs: ChangeScore, reg: Regulation) -> ChangeScoreFull:
         drift_score=cs.drift_score,
         drift_ci_low=cs.drift_ci_low,
         drift_ci_high=cs.drift_ci_high,
-        drift_display=f"{drift:.2f} ± {half_width:.2f}",
+        drift_display=f"{int((drift or 0)*100)}%",
         jsd_score=cs.jsd_score,
         jsd_p_value=cs.jsd_p_value,
         jsd_significant=cs.jsd_p_value is not None and cs.jsd_p_value < 0.05,
@@ -227,6 +263,15 @@ def _build_score_schema(cs: ChangeScore, reg: Regulation) -> ChangeScoreFull:
         is_significant=cs.is_significant,
         flagged_for_analysis=cs.flagged_for_analysis,
         computed_at=cs.computed_at.isoformat(),
+        # Rich fields for landing page
+        publication_date=reg.publication_date.strftime("%Y-%m-%d") if reg.publication_date else None,
+        regulation_type=reg.regulation_type,
+        plain_english=meta.get("plain_english"),
+        v1_snippet=v1[:300] if v1 else None,
+        v2_snippet=v2[:300] if v2 else None,
+        impact_low_m=meta.get("impact_low_m"),
+        impact_high_m=meta.get("impact_high_m"),
+        affected=meta.get("affected"),
     )
 
 
