@@ -18,9 +18,16 @@ The project came out of a real problem: US regulators publish around 40 rule upd
 
 ---
 
+| | |
+|---|---|
+| ![Dashboard](docs/screenshots/Dashboard.png) | ![Regulation Feed](docs/screenshots/Regulation-feed.png) |
+| ![Analytics](docs/screenshots/Analytics.png) | ![Alerts](docs/screenshots/Alerts.png) |
+
+---
+
 ## What it does
 
-**Change detection** reads the text of each regulation version and computes three complementary scores: semantic drift (sentence embedding cosine distance), Jensen-Shannon divergence on token distributions, and Wasserstein distance on term frequency vectors. Each measure catches a different kind of change. Semantic drift catches rewording, JSD catches vocabulary shift, Wasserstein catches structural changes like reordering. Any regulation scoring above the calibrated 0.15 drift threshold gets flagged for the agent pipeline.
+**Change detection** reads the text of each regulation version and computes three complementary scores: semantic drift (sentence embedding cosine distance), Jensen-Shannon divergence on token distributions, and Wasserstein distance on term frequency vectors. Each measure catches a different kind of change. Semantic drift catches rewording, JSD catches vocabulary shift, and Wasserstein catches structural changes like reordering. Any regulation scoring above the calibrated 0.15 drift threshold gets flagged for the agent pipeline.
 
 **Impact quantification** runs causal inference on flagged regulations. For institution-level rules it uses Difference-in-Differences on FDIC call report panel data. For system-wide rules it uses Synthetic Control. For capital adequacy changes it computes Basel III delta-RWA directly using the amended formula with Monte Carlo uncertainty propagation. Every estimate comes with a 90% confidence interval.
 
@@ -59,8 +66,6 @@ flowchart TD
     O --> P[React Dashboard]
     O --> Q[WebSocket Feed]
 ```
-
-**Data flow summary**
 
 Raw regulation text from the Federal Register is ingested daily by Airflow, split into chunks, embedded using `nomic-embed-text` via Ollama, and stored in ChromaDB. Each time a new version of a regulation appears, the change detection pipeline compares it to the previous version and writes drift scores to a TimescaleDB hypertable. Flagged regulations go through the causal inference pipeline and then the LangGraph agent, which produces a final impact report stored in PostgreSQL. FastAPI serves the dashboard and exposes a REST API with WebSocket support for live updates.
 
@@ -141,8 +146,6 @@ Nine DAGs handle the full pipeline on schedule:
 
 The FastAPI app runs at port 7860 on HuggingFace and port 8081 locally. Interactive docs are at `/docs`.
 
-**Core endpoints:**
-
 ```
 GET  /api/v1/change-scores              Recent change scores sorted by drift or date
 GET  /api/v1/change-scores/{id}         Score history for one regulation
@@ -160,13 +163,13 @@ WS   /ws/agent-trace/{report_id}       Stream agent reasoning in real time
 
 ## Change detection math
 
-Three measures are combined into a composite score using weights derived from an ablation study (F1 contributions: drift 0.50, JSD 0.30, Wasserstein 0.20).
+Three measures are combined into a composite score using weights derived from an ablation study. The F1 contribution breakdown is drift at 0.50, JSD at 0.30, and Wasserstein at 0.20.
 
-**Semantic drift** is 1 minus the cosine similarity between sentence embeddings of the two versions. Range 0 to 1. A score of 0.15 or higher triggers the agent pipeline, calibrated on a 300-document labeled test set.
+**Semantic drift** is 1 minus the cosine similarity between sentence embeddings of the two versions. Range is 0 to 1. A score of 0.15 or higher triggers the agent pipeline, calibrated on a 300-document labeled test set.
 
 **Jensen-Shannon divergence** measures the difference between token probability distributions. Unlike KL divergence it is symmetric and always finite. Statistical significance is tested using a permutation test with 1000 bootstrap samples.
 
-**Wasserstein distance** (Earth Mover's Distance) on TF-IDF vectors captures structural changes like reordering that leave the vocabulary similar but change what is emphasized.
+**Wasserstein distance** on TF-IDF vectors captures structural changes like reordering that leave the vocabulary similar but change what is being emphasized.
 
 **Causal inference** uses three methods depending on the rule type. Difference-in-Differences compares treated and control institutions from FDIC call report panel data before and after each regulation's effective date. Synthetic Control is used for system-wide rules where there is no control group. For capital adequacy rules, delta-RWA is computed directly from the Basel III formula using the amended risk weight parameters, with uncertainty propagated through 10,000 Monte Carlo draws.
 
@@ -200,7 +203,7 @@ docker compose -f docker-compose.hf.yml up
 
 Environment variables to set in HF Space secrets: `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB`, `API_SECRET_KEY`.
 
-The startup script (`deployment/start.sh`) starts PostgreSQL, runs Alembic migrations, starts ChromaDB, seeds the database, and launches the FastAPI server. If the seed step fails, the API will self-seed on startup when it detects fewer than 500 records.
+The startup script at `deployment/start.sh` starts PostgreSQL, runs Alembic migrations, starts ChromaDB, seeds the database, and launches the FastAPI server. If the seed step fails, the API will self-seed on startup when it detects fewer than 500 records in the database.
 
 ---
 
@@ -211,7 +214,7 @@ complianceiq/
 ├── api/
 │   ├── main.py                 FastAPI app, lifespan, CORS, routers
 │   ├── seed.py                 Self-contained async seeder (no external deps)
-│   ├── routes/                 One file per domain area
+│   ├── routes/
 │   │   ├── regulations.py
 │   │   ├── change_scores.py
 │   │   ├── causal.py
@@ -246,13 +249,13 @@ complianceiq/
 
 ## Design decisions worth noting
 
-**Why TimescaleDB instead of plain PostgreSQL for change scores?** Change scores are append-only and queried almost always by time range. TimescaleDB's hypertable partitioning gives automatic time-based chunking and compression without changing the SQL interface. The tradeoff is that the hypertable requires a composite primary key including the partition column (`computed_at`), which means `ON CONFLICT DO NOTHING` needs an explicit target.
+**Why TimescaleDB instead of plain PostgreSQL for change scores?** Change scores are append-only time-series data, queried almost always by time range. TimescaleDB's hypertable partitioning gives automatic time-based chunking and compression without changing the SQL interface at all. The one tradeoff is that the hypertable requires a composite primary key including the partition column (`computed_at`), which means `ON CONFLICT DO NOTHING` needs an explicit conflict target rather than a bare clause.
 
-**Why three drift measures instead of one?** Each measure has blind spots. Semantic drift misses vocabulary shift when the meaning is similar. JSD misses meaning changes that preserve vocabulary. Wasserstein misses changes to rare but legally important terms. Running all three and combining with learned weights pushes F1 from 0.71 (drift alone) to 0.84.
+**Why three drift measures instead of one?** Each measure has blind spots. Semantic drift misses vocabulary shift when the overall meaning stays similar. JSD misses meaning changes that preserve the vocabulary. Wasserstein misses changes to rare but legally important terms. Running all three and combining them with learned weights pushes F1 from 0.71 using drift alone to 0.84 using all three together.
 
-**Why Ollama instead of OpenAI?** Compliance data is sensitive. Running models locally means no regulation text ever leaves the institution's infrastructure. The tradeoff is speed: mistral:7b is slower than GPT-4 but the latency is acceptable for a batch pipeline that runs overnight.
+**Why Ollama instead of OpenAI?** Compliance data is sensitive. Running models locally means no regulation text ever leaves the institution's own infrastructure. The tradeoff is speed since mistral:7b is slower than GPT-4, but the latency is acceptable for a batch pipeline running overnight.
 
-**Why LangGraph instead of a simple chain?** The agent needs to decide which tools to run based on the regulation type. A capital adequacy rule needs the Basel III calculator. A consumer protection rule needs the FDIC institution lookup. LangGraph's graph-based control flow makes it easy to add conditional tool dispatch without hardcoding if-else logic.
+**Why LangGraph instead of a simple chain?** The agent needs to decide which tools to run based on the regulation type. A capital adequacy rule needs the Basel III calculator. A consumer protection rule needs the FDIC institution lookup. LangGraph's graph-based control flow handles that conditional dispatch cleanly without hardcoding if-else logic for every rule type.
 
 ---
 
