@@ -325,14 +325,15 @@ async def seed_db(session: AsyncSession, target: int = 3300) -> int:
                             "flagged": flagged,
                         })
 
-                        await session.commit()
                         inserted += 1
 
                         if inserted >= target:
+                            await session.commit()
                             return inserted
 
-                        # Commit every 50 for throughput
-                        if inserted % 50 == 0:
+                        # Commit every 10 records — ensures partial runs persist
+                        # even if the task is interrupted mid-way
+                        if inserted % 10 == 0:
                             await session.commit()
 
                     except Exception as exc:

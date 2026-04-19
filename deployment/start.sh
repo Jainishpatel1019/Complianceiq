@@ -40,17 +40,35 @@ done
 
 echo "==> Seeding database with core 10 regulations (idempotent)..."
 CHROMADB_HOST=localhost CHROMADB_PORT=8001 \
-    python -m backend.pipelines.seed
+    python -m backend.pipelines.seed || echo "Core seed warning (non-fatal)"
 
-echo "==> Launching bulk seed in background (10,000 real FR regulations 2015→now)..."
-# Run in background so uvicorn starts immediately — users see data appearing
-# within ~2 min rather than waiting for the full seed before the app is live.
+echo "==> Launching full 3500-regulation seed in background..."
+# api/seed.py is self-contained (no sklearn, no ChromaDB).
+# The API's _auto_seed_if_empty() will also run this after startup
+# if fewer than 1000 records exist — belt-and-suspenders approach.
 (
-    sleep 10  # let the API fully start first
-    python -m backend.pipelines.seed_bulk --target 10000 \
-        >> /tmp/seed_bulk.log 2>&1 \
-        && echo "Bulk seed complete" >> /tmp/seed_bulk.log \
-        || echo "Bulk seed failed — check /tmp/seed_bulk.log"
+    sleep 5
+    python -c "
+import asyncio, os, sys
+sys.path.insert(0, '/app')
+os.environ.setdefault('DATABASE_URL', 'postgresql://complianceiq:${POSTGRES_PASSWORD:-complianceiq_demo}@localhost/complianceiq')
+
+async def run():
+    from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
+    from sqlalchemy.orm import sessionmaker
+    from api.seed import seed_db
+    db_url = os.environ['DATABASE_URL'].replace('postgresql://', 'postgresql+asyncpg://', 1)
+    engine = create_async_engine(db_url, echo=False)
+    async_session = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
+    async with async_session() as session:
+        n = await seed_db(session, target=3500)
+    await engine.dispose()
+    print(f'Background seed complete: {n} records inserted')
+
+asyncio.run(run())
+" >> /tmp/seed_api.log 2>&1 \
+    && echo "API seed complete" >> /tmp/seed_api.log \
+    || echo "API seed error — check /tmp/seed_api.log"
 ) &
 
 echo "==> Starting ComplianceIQ API on port 7860..."

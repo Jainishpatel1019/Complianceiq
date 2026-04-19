@@ -49,7 +49,11 @@ async def _auto_seed_if_empty() -> None:
 
     Uses api/seed.py which has ZERO external dependencies (no sklearn,
     no ChromaDB, no subprocess). Inserts directly via AsyncSession.
-    Triggered 3 seconds after startup if the DB is empty.
+    Triggered 3 seconds after startup.
+
+    Threshold: if fewer than 1000 regulations exist, run the full seed.
+    This covers the case where start.sh core-seed inserted only ~10 records
+    and the background bulk-seed failed — so we don't skip when count > 0.
     """
     await asyncio.sleep(3)
     try:
@@ -66,13 +70,13 @@ async def _auto_seed_if_empty() -> None:
             row = await conn.execute(sqla_text("SELECT COUNT(*) FROM regulations"))
             count = row.scalar() or 0
 
-        if count > 0:
-            log.info("auto_seed_skip", existing=count)
+        if count >= 1000:
+            log.info("auto_seed_skip", existing=count, reason="already>=1000")
             return
 
-        log.info("auto_seed_start", reason="DB empty — running self-contained seed")
+        log.info("auto_seed_start", existing=count, reason="below 1000 — running full seed")
         async with async_session() as session:
-            inserted = await seed_db(session, target=3300)
+            inserted = await seed_db(session, target=3500)
         log.info("auto_seed_complete", inserted=inserted)
 
     except Exception as exc:

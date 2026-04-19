@@ -15,7 +15,6 @@ GET /graph/agent/status/{reg_id} → Latest agent trace steps from DB
 from __future__ import annotations
 
 import logging
-import time
 from typing import Any
 
 from fastapi import APIRouter, HTTPException, Query
@@ -27,38 +26,23 @@ router = APIRouter()
 
 # ── Cached in-process snapshot (rebuilt by Airflow, refreshed on startup) ─────
 _SNAPSHOT_CACHE: Any = None
-_SNAPSHOT_BUILT_AT: float = 0.0
-_CACHE_TTL_SECONDS: int = 3600  # 1 hour — balances freshness vs. rebuild cost
 
 
 def _get_snapshot() -> Any:
-    """Return cached snapshot or build from synthetic data (dev fallback).
-
-    TTL behaviour: cache is rebuilt every _CACHE_TTL_SECONDS seconds so
-    the knowledge graph reflects updated PageRank / community scores from
-    the latest Airflow run without requiring a pod restart.
-    """
-    global _SNAPSHOT_CACHE, _SNAPSHOT_BUILT_AT
-
-    age = time.time() - _SNAPSHOT_BUILT_AT
-    if _SNAPSHOT_CACHE is not None and age < _CACHE_TTL_SECONDS:
-        return _SNAPSHOT_CACHE
-
+    """Return cached snapshot or build from synthetic data (dev fallback)."""
+    global _SNAPSHOT_CACHE
     if _SNAPSHOT_CACHE is not None:
-        log.info("Graph snapshot TTL expired (age=%.0fs) — rebuilding", age)
+        return _SNAPSHOT_CACHE
 
     from backend.models.graph_model import make_synthetic_regulations, build_full_snapshot
     regs = make_synthetic_regulations(n=40)
     _SNAPSHOT_CACHE = build_full_snapshot(regs, compute_gat=False)
-    _SNAPSHOT_BUILT_AT = time.time()
     return _SNAPSHOT_CACHE
 
 
 def _invalidate_cache() -> None:
-    """Force cache expiry — call this after an Airflow graph-build run."""
-    global _SNAPSHOT_CACHE, _SNAPSHOT_BUILT_AT
+    global _SNAPSHOT_CACHE
     _SNAPSHOT_CACHE = None
-    _SNAPSHOT_BUILT_AT = 0.0
 
 
 # ── Schemas ────────────────────────────────────────────────────────────────────
@@ -114,17 +98,6 @@ class AgentReportResponse(BaseModel):
 
 
 # ── Routes ─────────────────────────────────────────────────────────────────────
-
-@router.post("/cache/invalidate", tags=["graph"])
-async def invalidate_graph_cache() -> dict:
-    """Force immediate cache invalidation.
-
-    Called by the Airflow graph-build DAG after each successful run so the
-    next request triggers a fresh snapshot. Safe to call multiple times.
-    """
-    _invalidate_cache()
-    return {"invalidated": True, "message": "Graph cache cleared — will rebuild on next request"}
-
 
 @router.get("/snapshot", response_model=GraphSummary)
 async def get_graph_snapshot() -> GraphSummary:
