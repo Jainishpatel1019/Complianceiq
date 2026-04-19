@@ -46,7 +46,7 @@ _REGULATIONS = [
         "doc_num": "2024-00123",
         "title": "Capital Requirements for Large Banking Organisations — Basel III Endgame",
         "agency": "OCC",
-        "reg_type": "capital",
+        "reg_type": "final_rule",
         "cfr": "12 CFR 3",
         "pub_date": datetime(2024, 1, 15, tzinfo=timezone.utc),
         "plain_english": (
@@ -145,7 +145,7 @@ This amendment is effective July 1, 2024. Institutions subject to the expanded s
         "doc_num": "2024-00456",
         "title": "Liquidity Coverage Ratio: Treatment of Operational Deposits",
         "agency": "FRB",
-        "reg_type": "liquidity",
+        "reg_type": "final_rule",
         "cfr": "12 CFR 249",
         "pub_date": datetime(2024, 2, 1, tzinfo=timezone.utc),
         "plain_english": (
@@ -231,7 +231,7 @@ peak intraday liquidity usage and available intraday liquidity to the Federal Re
         "doc_num": "2024-00789",
         "title": "Stress Testing Requirements: 2024 Supervisory Scenarios",
         "agency": "FDIC",
-        "reg_type": "stress_testing",
+        "reg_type": "proposed_rule",
         "cfr": "12 CFR 325",
         "pub_date": datetime(2024, 2, 15, tzinfo=timezone.utc),
         "plain_english": (
@@ -333,7 +333,7 @@ publish a qualitative discussion of capital adequacy alongside numerical results
         "doc_num": "2024-01011",
         "title": "Community Reinvestment Act Modernisation Final Rule",
         "agency": "OCC",
-        "reg_type": "consumer_protection",
+        "reg_type": "notice",
         "cfr": "12 CFR 25",
         "pub_date": datetime(2024, 3, 1, tzinfo=timezone.utc),
         "plain_english": (
@@ -420,7 +420,7 @@ are drawn equally from the lending and financing test weights).
         "doc_num": "2024-01213",
         "title": "Fair Debt Collection Practices: Digital Communications Rule",
         "agency": "CFPB",
-        "reg_type": "consumer_protection",
+        "reg_type": "notice",
         "cfr": "12 CFR 1006",
         "pub_date": datetime(2024, 3, 15, tzinfo=timezone.utc),
         "plain_english": (
@@ -503,7 +503,7 @@ cease all collection activity, including electronic communications.
         "doc_num": "2024-01415",
         "title": "Volcker Rule: Covered Fund Definition Clarification",
         "agency": "FRB",
-        "reg_type": "trading",
+        "reg_type": "final_rule",
         "cfr": "12 CFR 248",
         "pub_date": datetime(2024, 4, 1, tzinfo=timezone.utc),
         "plain_english": (
@@ -595,7 +595,7 @@ exposures that replicate the economic effect of a covered transaction.
         "doc_num": "2024-01617",
         "title": "Basel III Endgame: Market Risk Capital Requirements (FRTB)",
         "agency": "OCC",
-        "reg_type": "capital",
+        "reg_type": "final_rule",
         "cfr": "12 CFR 3",
         "pub_date": datetime(2024, 4, 15, tzinfo=timezone.utc),
         "plain_english": (
@@ -680,7 +680,7 @@ Covered institutions must publish quarterly disclosures including:
         "doc_num": "2024-01819",
         "title": "Safeguards Rule: Information Security Program Requirements",
         "agency": "FDIC",
-        "reg_type": "aml",
+        "reg_type": "final_rule",
         "cfr": "16 CFR 314",
         "pub_date": datetime(2024, 5, 1, tzinfo=timezone.utc),
         "plain_english": (
@@ -779,7 +779,7 @@ board within 30 days.
         "doc_num": "2024-02021",
         "title": "Anti-Money Laundering: Beneficial Ownership Reporting Requirements",
         "agency": "FinCEN",
-        "reg_type": "aml",
+        "reg_type": "final_rule",
         "cfr": "31 CFR 1010",
         "pub_date": datetime(2024, 5, 15, tzinfo=timezone.utc),
         "plain_english": (
@@ -873,7 +873,7 @@ Criminal penalties: up to $10,000,000 fine (increased from $1,000,000) and impri
         "doc_num": "2024-02223",
         "title": "Interchange Fee Standards: Card Transaction Amendment",
         "agency": "FRB",
-        "reg_type": "consumer_protection",
+        "reg_type": "notice",
         "cfr": "12 CFR 235",
         "pub_date": datetime(2024, 6, 1, tzinfo=timezone.utc),
         "plain_english": (

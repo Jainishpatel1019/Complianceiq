@@ -19,7 +19,7 @@ import hashlib
 import json
 import random
 import uuid
-from datetime import date, datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Any
 
 from sqlalchemy import text
@@ -184,6 +184,40 @@ _TEMPLATES = [
         "plain_english": "Extends full consumer protections to prepaid cards. Overdraft fees capped at ${cap}/month.",
         "impact_lo": 0.1, "impact_hi": 0.6, "affected": "Prepaid card issuers",
     },
+    # ── Notice / Guidance templates ───────────────────────────────────────────
+    {
+        "slug": "model-risk-guidance",
+        "cfr": "SR 11-7",
+        "reg_type": "notice",
+        "title": "Supervisory Guidance on Model Risk Management — {agency} ({year})",
+        "v1": "Banking organizations should have a robust model risk management framework. Model validation should be performed by personnel independent of model development. Documentation should include conceptual soundness, data inputs, and performance metrics.",
+        "v2": "Banking organizations are expected to maintain a comprehensive model risk management framework including independent validation, end-to-end documentation of all model inputs and outputs, and periodic model performance reviews no less than annually. Third-party model vendors must provide sufficient documentation to support full internal validation.",
+        "params": [{"x":"1"},{"x":"2"},{"x":"3"}],
+        "plain_english": "Updated guidance on model risk management. Examiners will assess validation independence and documentation quality.",
+        "impact_lo": 0.05, "impact_hi": 0.3, "affected": "All banking organizations using quantitative models",
+    },
+    {
+        "slug": "bsa-exam-procedures",
+        "cfr": "BSA/AML Manual",
+        "reg_type": "notice",
+        "title": "BSA/AML Examination Procedures Update — {agency} ({year})",
+        "v1": "Examiners assess whether institutions have developed and implemented a reasonably designed BSA/AML compliance program covering policies, procedures, and internal controls.",
+        "v2": "Examiners will assess BSA/AML programs against updated risk-based examination procedures. New exam modules cover virtual asset service providers, real-time payment systems, and high-risk customer categories including marijuana-related businesses and third-party payment processors. Annual independent testing required.",
+        "params": [{"x":"1"},{"x":"2"},{"x":"3"}],
+        "plain_english": "Updated exam procedures for AML compliance. New focus on crypto, real-time payments, and high-risk customer types.",
+        "impact_lo": 0.05, "impact_hi": 0.2, "affected": "All BSA-regulated institutions",
+    },
+    {
+        "slug": "climate-fin-risk",
+        "cfr": "OCC 2023-16",
+        "reg_type": "notice",
+        "title": "Climate-Related Financial Risk Supervisory Guidance — {agency} ({year})",
+        "v1": "Institutions should develop initial processes for identifying and monitoring climate-related financial risks in their portfolios and operations.",
+        "v2": "Large banks must integrate climate-related financial risks into their governance frameworks, risk appetite statements, strategic planning processes, and credit underwriting standards. Quantitative scenario analysis incorporating both physical and transition risks is expected for all institutions with total consolidated assets over $100 billion.",
+        "params": [{"x":"1"},{"x":"2"},{"x":"3"}],
+        "plain_english": "Climate risk is now a supervisory priority. Large banks must run scenario analyses for physical and transition climate risks.",
+        "impact_lo": 0.2, "impact_hi": 1.1, "affected": "Banks with >$100B in assets",
+    },
 ]
 
 
@@ -237,10 +271,11 @@ async def seed_db(session: AsyncSession, target: int = 3300) -> int:
                     is_sig = jsd_p < 0.05
                     flagged = composite > 0.65
 
-                    # Publication date
+                    # Publication date — must be timezone-aware datetime for
+                    # asyncpg / TIMESTAMPTZ column (plain date strings fail).
                     pub_month = rng.randint(1, 12)
                     pub_day = rng.randint(1, 28)
-                    pub_date = date(year, pub_month, pub_day)
+                    pub_date = datetime(year, pub_month, pub_day, 0, 0, 0, tzinfo=timezone.utc)
 
                     meta = {
                         "plain_english": plain,
@@ -272,7 +307,7 @@ async def seed_db(session: AsyncSession, target: int = 3300) -> int:
                             "title": title[:500],
                             "agency": agency_name,
                             "abstract": v2[:1000],
-                            "pub_date": pub_date.isoformat(),
+                            "pub_date": pub_date,  # pass datetime obj, not string
                             "reg_type": tmpl["reg_type"],
                             "full_text": v2,
                             "meta": json.dumps(meta),
@@ -301,8 +336,13 @@ async def seed_db(session: AsyncSession, target: int = 3300) -> int:
                         await session.commit()
                         inserted += 1
 
-                    except Exception:
+                    except Exception as _e:
                         await session.rollback()
+                        # Log first failure per run so HF logs show the root cause
+                        if inserted == 0:
+                            import traceback
+                            print(f"[seed] regulation insert failed ({doc_num}): {_e}", flush=True)
+                            traceback.print_exc()
                         continue  # skip this record, try next
 
                     # ── Step 2: Insert change score (best-effort, separate tx) ──

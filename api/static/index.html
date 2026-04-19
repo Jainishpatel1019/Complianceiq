@@ -784,7 +784,9 @@ function buildDashCharts(){
 
   // Sparklines
   const byYr={};_regs.forEach(r=>{const y=(r.publication_date||'').slice(0,4);if(y)(byYr[y]=(byYr[y]||0)+1)})
-  const yrs=Object.keys(byYr).sort().slice(-8)
+  // Always show 2015 → current year so chart doesn't collapse to 1 year when data is sparse
+  const _curY=new Date().getFullYear()
+  const yrs=Array.from({length:_curY-2015+1},(_,i)=>(2015+i).toString())
   const mkSpark=(id,data,color)=>{
     destroyChart(id)
     const ctx=document.getElementById(id)
@@ -858,9 +860,9 @@ function buildAnalyticsCharts(){
   _analyticsDone=true
 
   const byYr={};_regs.forEach(r=>{const y=(r.publication_date||'').slice(0,4);if(y)(byYr[y]=(byYr[y]||0)+1)})
-  const yrs=Object.keys(byYr).sort()
-  const counts=yrs.map(y=>byYr[y])
-  let cum=0;const cumCounts=counts.map(v=>(cum+=v))
+  const yrs=Array.from({length:new Date().getFullYear()-2015+1},(_,i)=>(2015+i).toString())
+  const counts=yrs.map(y=>byYr[y]||0)
+  let cum=0;const cumCounts=counts.map(v=>(cum+=(v||0),cum))
 
   // Dual-axis line: annual + cumulative
   destroyChart('ch-tl-big')
