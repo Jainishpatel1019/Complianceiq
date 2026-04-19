@@ -262,8 +262,8 @@
   <div class="section-sub">Sorted by semantic drift score — click any card for full analysis, diff, and compliance actions</div>
 
   <div class="tabs">
-    <button class="tab active" onclick="switchTab('db')">Our Database (10 deep-analysed)</button>
-    <button class="tab" onclick="switchTab('fr')">Federal Register Live ↗</button>
+    <button class="tab active" onclick="switchTab('db')">Deep-Analysed (10 regulations)</button>
+    <button class="tab" onclick="switchTab('fr')">Full Database — All Agencies ↗</button>
   </div>
 
   <!-- DB TAB -->
@@ -450,33 +450,45 @@ function pct(v) { return Math.round((v||0)*100) + '%' }
 // ── SVG CHARTS ────────────────────────────────────────────────────────────────
 function drawDriftChart(scores) {
   const el = document.getElementById('drift-chart')
-  const W = 460, H = 200, PL = 10, PR = 10, PT = 10, PB = 50
-  const data = scores.slice(0,10)
+  const W = 460, H = 200, PL = 28, PR = 8, PT = 10, PB = 36
+  const data = scores.slice(0, 12)
   const bW = (W - PL - PR) / data.length
-  const maxV = 1
-  const scaleY = v => H - PB - (v / maxV) * (H - PT - PB)
+  const chartH = H - PT - PB
+  const scaleY = v => H - PB - v * chartH
 
   let svg = ''
-  // threshold line at 0.15
-  const ty = scaleY(0.15)
-  svg += `<line x1="${PL}" y1="${ty}" x2="${W-PR}" y2="${ty}" stroke="#f59e0b" stroke-width="1" stroke-dasharray="4,3" opacity="0.5"/>`
-  svg += `<text x="${W-PR-2}" y="${ty-4}" text-anchor="end" font-size="8" fill="#f59e0b" opacity="0.7">15% threshold</text>`
 
-  data.forEach((d, i) => {
-    const x = PL + i * bW + bW * 0.1
-    const bh = Math.max(2, (d.drift_score || 0) * (H - PT - PB))
-    const y = H - PB - bh
-    const col = driftColour(d.drift_score || 0)
-    const label = (d.document_number || '').replace('FR-2024-','').replace('FR-','')
-    svg += `<rect x="${x}" y="${y}" width="${bW*0.8}" height="${bh}" fill="${col}" opacity="0.85" rx="3"/>`
-    svg += `<text x="${x+bW*0.4}" y="${H-PB+12}" text-anchor="middle" font-size="7.5" fill="#94a3b8" transform="rotate(-40 ${x+bW*0.4} ${H-PB+12})">${label}</text>`
-    svg += `<text x="${x+bW*0.4}" y="${y-3}" text-anchor="middle" font-size="7" fill="${col}">${pct(d.drift_score)}</text>`
-  })
-
-  // y-axis labels
+  // Y-axis grid lines + labels
   ;[0, 0.25, 0.5, 0.75, 1.0].forEach(v => {
     const y = scaleY(v)
-    svg += `<text x="${PL}" y="${y+3}" font-size="7" fill="#64748b">${Math.round(v*100)}%</text>`
+    svg += `<line x1="${PL}" y1="${y}" x2="${W-PR}" y2="${y}" stroke="#334155" stroke-width="0.5"/>`
+    svg += `<text x="${PL-4}" y="${y+3}" text-anchor="end" font-size="8" fill="#64748b">${Math.round(v*100)}%</text>`
+  })
+
+  // Threshold line at 0.15
+  const ty = scaleY(0.15)
+  svg += `<line x1="${PL}" y1="${ty}" x2="${W-PR}" y2="${ty}" stroke="#f59e0b" stroke-width="1.5" stroke-dasharray="5,3" opacity="0.7"/>`
+  svg += `<text x="${W-PR-2}" y="${ty-4}" text-anchor="end" font-size="7.5" fill="#f59e0b" opacity="0.8">15% alert</text>`
+
+  data.forEach((d, i) => {
+    const x   = PL + i * bW + bW * 0.12
+    const bh  = Math.max(3, (d.drift_score || 0) * chartH)
+    const y   = H - PB - bh
+    const col = driftColour(d.drift_score || 0)
+
+    // Shorten label: take last 5 chars of document_number (most unique part)
+    const raw   = (d.document_number || '').replace(/^FR-/i, '')
+    const label = raw.length > 7 ? raw.slice(-5) : raw
+
+    svg += `<rect x="${x}" y="${y}" width="${bW*0.76}" height="${bh}" fill="${col}" opacity="0.85" rx="2"/>`
+
+    // Drift % label above bar (only if bar is tall enough)
+    if (bh > 18) {
+      svg += `<text x="${x + bW*0.38}" y="${y - 3}" text-anchor="middle" font-size="7.5" font-weight="600" fill="${col}">${pct(d.drift_score)}</text>`
+    }
+
+    // X-axis label — short, horizontal, no rotation
+    svg += `<text x="${x + bW*0.38}" y="${H - PB + 13}" text-anchor="middle" font-size="7.5" fill="#64748b">${label}</text>`
   })
 
   el.innerHTML = svg
@@ -617,34 +629,46 @@ async function loadFrCards() {
     }
     container.innerHTML = regs.map(r => {
       const col = driftColour(r.drift_score || 0)
-      const typeTag = { 'Rule':'tag-rule', 'Proposed Rule':'tag-proposed', 'Final Rule':'tag-final', 'Notice':'tag-notice' }[r.type] || 'tag-notice'
-      const impactMid = r.impact_low_m && r.impact_high_m ? ((r.impact_low_m + r.impact_high_m) / 2).toFixed(0) : null
+      const sev = severity(r.drift_score || 0)
+      const sevTag = { high: 'badge-drift-high', medium: 'badge-drift-med', low: 'badge-drift-low' }[sev]
+      const typeMap = { capital:'Capital', aml:'AML / BSA', consumer_protection:'Consumer', liquidity:'Liquidity',
+                        market_risk:'Market Risk', operational_risk:'Op Risk', stress_testing:'Stress Test',
+                        reporting:'Reporting', payment:'Payment', crypto:'Crypto', deposit:'Deposit', housing:'Housing' }
+      const typeLabel = typeMap[r.regulation_type] || r.regulation_type || 'Rule'
+      const impactMid = r.impact_low_m && r.impact_high_m ? Math.round((r.impact_low_m + r.impact_high_m) / 2) : null
+      const isFromDb  = r.source === 'federal_register'
 
       return `
       <div class="fr-card">
         <div class="fr-meta">
-          <span class="tag ${typeTag}">${r.type || 'Notice'}</span>
-          <span>${r.agency || '—'}</span>
+          <span class="tag tag-rule">${typeLabel}</span>
+          ${isFromDb ? '<span class="tag" style="background:rgba(34,197,94,0.15);color:#4ade80;">✓ In DB</span>' : ''}
+          <span style="font-weight:600;color:var(--text);font-size:.78rem;">${r.agency || '—'}</span>
           <span style="font-family:monospace;color:#93c5fd;font-size:.7rem;">${r.document_number || ''}</span>
-          ${r.publication_date ? `<span>${r.publication_date}</span>` : ''}
+          ${r.publication_date ? `<span style="font-size:.7rem;">${r.publication_date}</span>` : ''}
         </div>
         <div class="fr-title">${r.title}</div>
 
-        ${impactMid ? `
-        <div class="fr-impact" style="margin-top:.6rem;">
-          <span style="font-size:.75rem;color:#93c5fd;margin-right:.5rem;">💰</span>
-          <span class="fr-impact-num">$${impactMid}M</span><span class="fr-impact-suffix">${r.impact_suffix || ''}</span>
-          <span class="fr-impact-range">est. $${r.impact_low_m}M – $${r.impact_high_m}M</span>
-        </div>` : ''}
-
-        <div class="fr-drift-row" style="margin-top:.6rem;">
-          <span style="font-size:.7rem;color:var(--muted);width:60px;">Drift est.</span>
-          <div class="fr-drift-bar"><div class="fr-drift-fill" style="width:${(r.drift_score||0)*100}%;background:${col};"></div></div>
-          <span class="fr-drift-val">${pct(r.drift_score)}</span>
+        <div style="display:flex;gap:.75rem;align-items:center;margin-top:.75rem;flex-wrap:wrap;">
+          ${impactMid ? `
+          <div class="fr-impact" style="flex:1;min-width:160px;">
+            <span style="font-size:.7rem;color:#93c5fd;margin-right:.4rem;">💰</span>
+            <span class="fr-impact-num">$${impactMid >= 1000 ? (impactMid/1000).toFixed(1)+'B' : impactMid+'M'}</span>
+            <span class="fr-impact-range" style="margin-left:.5rem;">$${r.impact_low_m >= 1000 ? (r.impact_low_m/1000).toFixed(0)+'B' : r.impact_low_m+'M'} – $${r.impact_high_m >= 1000 ? (r.impact_high_m/1000).toFixed(0)+'B' : r.impact_high_m+'M'}</span>
+          </div>` : ''}
+          <span class="badge ${sevTag}" style="flex-shrink:0;">Drift ${pct(r.drift_score)}</span>
+          ${r.jsd_significant ? '<span class="badge badge-jsd" style="flex-shrink:0;">JSD ✓ sig</span>' : ''}
         </div>
 
-        ${r.affected_institutions ? `<div class="fr-institutions">Affects ${r.affected_institutions}</div>` : ''}
-        ${r.abstract ? `<div style="font-size:.78rem;color:var(--muted);margin-top:.5rem;line-height:1.5;border-top:1px solid var(--border);padding-top:.5rem;">${r.abstract.slice(0,280)}${r.abstract.length>280?'…':''}</div>` : ''}
+        <div class="fr-drift-row" style="margin-top:.6rem;">
+          <span style="font-size:.7rem;color:var(--muted);width:55px;flex-shrink:0;">Drift</span>
+          <div class="fr-drift-bar"><div class="fr-drift-fill" style="width:${(r.drift_score||0)*100}%;background:${col};"></div></div>
+          <span class="fr-drift-val">${pct(r.drift_score)}</span>
+          ${r.composite_score ? `<span style="font-size:.65rem;color:var(--muted);margin-left:.5rem;">composite ${pct(r.composite_score)}</span>` : ''}
+        </div>
+
+        ${r.affected_institutions ? `<div class="fr-institutions" style="margin-top:.4rem;">Affects ${r.affected_institutions}</div>` : ''}
+        ${r.abstract ? `<div style="font-size:.78rem;color:var(--muted);margin-top:.6rem;line-height:1.5;border-top:1px solid var(--border);padding-top:.5rem;">${r.abstract.slice(0,300)}${r.abstract.length>300?'…':''}</div>` : ''}
       </div>`
     }).join('')
   } catch(err) {
