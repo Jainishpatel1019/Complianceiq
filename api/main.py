@@ -12,6 +12,7 @@ Why FastAPI over Flask/Django:
 
 from __future__ import annotations
 
+import asyncio
 import logging
 import os
 from contextlib import asynccontextmanager
@@ -23,7 +24,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import RedirectResponse
 from fastapi.staticfiles import StaticFiles
 
-from api.routes import regulations, reports, health, change_scores, causal, graph
+from api.routes import regulations, reports, health, change_scores, causal, graph, refresh
 from api.websockets import router as ws_router
 
 # ── Structured logging setup ─────────────────────────────────────────────────
@@ -43,6 +44,41 @@ structlog.configure(
 log = structlog.get_logger()
 
 
+async def _auto_seed_if_empty() -> None:
+    """Self-healing seed — runs inside the API's own async event loop.
+
+    Uses api/seed.py which has ZERO external dependencies (no sklearn,
+    no ChromaDB, no subprocess). Inserts directly via AsyncSession.
+    Triggered 3 seconds after startup if the DB is empty.
+    """
+    await asyncio.sleep(3)
+    try:
+        from sqlalchemy import text as sqla_text
+        from sqlalchemy.ext.asyncio import AsyncSession
+        from sqlalchemy.orm import sessionmaker
+        from db import get_engine
+        from api.seed import seed_db
+
+        engine = get_engine()
+        async_session = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
+
+        async with engine.connect() as conn:
+            row = await conn.execute(sqla_text("SELECT COUNT(*) FROM regulations"))
+            count = row.scalar() or 0
+
+        if count > 0:
+            log.info("auto_seed_skip", existing=count)
+            return
+
+        log.info("auto_seed_start", reason="DB empty — running self-contained seed")
+        async with async_session() as session:
+            inserted = await seed_db(session, target=3300)
+        log.info("auto_seed_complete", inserted=inserted)
+
+    except Exception as exc:
+        log.error("auto_seed_failed", error=str(exc))
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     """Startup and shutdown logic for the FastAPI app.
@@ -57,6 +93,9 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     async with engine.connect() as conn:
         await conn.execute(__import__("sqlalchemy").text("SELECT 1"))
     log.info("Database connection verified")
+
+    # Self-healing: seed the DB if it's empty (catches start.sh seed failures)
+    asyncio.create_task(_auto_seed_if_empty())
 
     yield
 
@@ -104,6 +143,7 @@ app.include_router(change_scores.router, prefix="/api/v1/change-scores", tags=["
 app.include_router(causal.router, prefix="/api/v1/causal", tags=["causal"])
 app.include_router(graph.router,  prefix="/api/v1/graph",  tags=["graph"])
 app.include_router(ws_router, prefix="/ws", tags=["websockets"])
+app.include_router(refresh.router, prefix="/api/v1/refresh", tags=["refresh"])
 
 # ── Static files ──────────────────────────────────────────────────────────────
 # 1. Landing page dashboard (api/static/) — always present in the image

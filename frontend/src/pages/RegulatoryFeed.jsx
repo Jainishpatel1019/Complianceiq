@@ -8,11 +8,11 @@
  * Phase 2 goal from the master doc:
  *   "You can show a chart of which regulations changed most this week."
  */
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell,
 } from 'recharts'
-import { RefreshCw, AlertTriangle, Filter } from 'lucide-react'
+import { RefreshCw, AlertTriangle, Filter, FileText, ArrowRight } from 'lucide-react'
 import { useApi } from '../hooks/useApi'
 import ScoreBadge from '../components/ScoreBadge'
 import CIBar from '../components/CIBar'
@@ -72,6 +72,76 @@ function SectionHeatmap({ regulationId }) {
           </div>
         ))}
       </div>
+    </div>
+  )
+}
+
+// ── Text diff preview (top 2 changed blocks) ─────────────────────────────────
+function DiffPreview({ regulationId }) {
+  const [diff, setDiff]       = useState(null)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    fetch(`/api/v1/regulations/${regulationId}/diff`)
+      .then(r => r.ok ? r.json() : null)
+      .then(d => { setDiff(d); setLoading(false) })
+      .catch(() => setLoading(false))
+  }, [regulationId])
+
+  if (loading) return (
+    <div className="mt-3 border-t border-gray-800 pt-3 text-xs text-gray-600 animate-pulse">
+      Loading text changes…
+    </div>
+  )
+  if (!diff) return null
+
+  const topChanges = (diff.changes || [])
+    .filter(c => c.significance === 'high' && c.type === 'changed')
+    .slice(0, 2)
+
+  if (!topChanges.length) return null
+
+  return (
+    <div className="mt-3 border-t border-gray-800 pt-3">
+      {/* Plain-English summary */}
+      {diff.plain_english && (
+        <div className="mb-3 p-2.5 bg-blue-500/5 border border-blue-500/15 rounded-lg">
+          <p className="text-xs text-blue-300 font-semibold mb-1">💡 In plain English</p>
+          <p className="text-xs text-gray-400 leading-relaxed">{diff.plain_english}</p>
+        </div>
+      )}
+
+      <p className="text-xs text-gray-500 mb-2 flex items-center gap-1">
+        <FileText size={11} />
+        Key text changes ({diff.pct_changed}% of document modified):
+      </p>
+
+      {topChanges.map((c, i) => (
+        <div key={i} className="mb-2 border border-gray-800 rounded-lg overflow-hidden">
+          <div className="px-2 py-1 bg-gray-900/60 flex items-center gap-2">
+            <span className="text-xs font-mono text-yellow-400">REVISED</span>
+            {c.has_numeric_change && c.numbers_before?.length > 0 && c.numbers_after?.length > 0 && (
+              <span className="text-xs text-gray-500 font-mono flex items-center gap-1">
+                <span className="text-red-400">{c.numbers_before[0]}</span>
+                <ArrowRight size={10} />
+                <span className="text-green-400">{c.numbers_after[0]}</span>
+              </span>
+            )}
+          </div>
+          <div className="p-2 space-y-1.5">
+            {c.old_text && (
+              <p className="text-xs text-red-400/80 bg-red-500/5 border border-red-500/10 rounded px-2 py-1 leading-relaxed line-clamp-2">
+                ✗ {c.old_text.slice(0, 200)}
+              </p>
+            )}
+            {c.new_text && (
+              <p className="text-xs text-green-400/80 bg-green-500/5 border border-green-500/10 rounded px-2 py-1 leading-relaxed line-clamp-2">
+                ✓ {c.new_text.slice(0, 200)}
+              </p>
+            )}
+          </div>
+        </div>
+      ))}
     </div>
   )
 }
@@ -139,7 +209,12 @@ function FeedRow({ item, expanded, onToggle }) {
         </div>
       </div>
 
-      {expanded && <SectionHeatmap regulationId={item.regulation_id} />}
+      {expanded && (
+        <div className="px-4 pb-4">
+          <DiffPreview regulationId={item.regulation_id} />
+          <SectionHeatmap regulationId={item.regulation_id} />
+        </div>
+      )}
     </div>
   )
 }
