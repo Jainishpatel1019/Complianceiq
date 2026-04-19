@@ -66,9 +66,33 @@ class RegulationHeatmap(BaseModel):
 
 # ── Routes ────────────────────────────────────────────────────────────────────
 
+@router.get("/stats")
+async def get_stats(db: AsyncSession = Depends(get_db_session)):
+    """Return quick summary stats — total regulations, flagged count, agencies."""
+    try:
+        total_regs   = (await db.execute(select(func.count(Regulation.id)))).scalar() or 0
+        total_scores = (await db.execute(select(func.count(ChangeScore.id)))).scalar() or 0
+        flagged      = (await db.execute(
+            select(func.count(ChangeScore.id)).where(ChangeScore.flagged_for_analysis == True)
+        )).scalar() or 0
+        agencies     = (await db.execute(
+            select(func.count(func.distinct(Regulation.agency)))
+        )).scalar() or 0
+        return {
+            "total_regulations":  total_regs,
+            "total_change_scores": total_scores,
+            "flagged":            flagged,
+            "agencies":           agencies,
+            "seeding_complete":   total_regs >= 500,
+        }
+    except Exception as exc:
+        return {"total_regulations": 0, "flagged": 0, "agencies": 0,
+                "total_change_scores": 0, "seeding_complete": False, "error": str(exc)}
+
+
 @router.get("", response_model=list[ChangeScoreFull])
 async def list_change_scores(
-    limit: int = Query(default=50, ge=1, le=200),
+    limit: int = Query(default=50, ge=1, le=1000),
     flagged_only: bool = Query(default=False),
     min_drift: float = Query(default=0.0, ge=0.0, le=1.0),
     db: AsyncSession = Depends(get_db_session),

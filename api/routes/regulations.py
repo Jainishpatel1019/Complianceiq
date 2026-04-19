@@ -259,7 +259,7 @@ async def get_federal_register_live(
             "source":             "federal_register",
             "drift_score":        round(cs.drift_score or 0, 4) if cs else 0,
             "jsd_score":          round(cs.jsd_score or 0, 4)   if cs else 0,
-            "jsd_significant":    bool(cs.jsd_significant)       if cs else False,
+            "jsd_significant":    bool(cs.jsd_p_value is not None and cs.jsd_p_value < 0.05) if cs else False,
             "wasserstein_score":  round(cs.wasserstein_score or 0, 4) if cs else 0,
             "composite_score":    round(cs.composite_score or 0, 4)   if cs else 0,
             "flagged_for_analysis": bool(cs.flagged_for_analysis) if cs else False,

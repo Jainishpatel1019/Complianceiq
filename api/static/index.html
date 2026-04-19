@@ -6,837 +6,553 @@
   <title>ComplianceIQ — Regulatory Intelligence Platform</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
+
     :root {
-      --blue:   #2563eb; --indigo: #4f46e5; --green: #16a34a;
-      --amber:  #d97706; --red: #dc2626;    --slate: #0f172a;
-      --card:   #1e293b; --border: #334155; --text: #e2e8f0;
+      --blue:   #2563eb;
+      --indigo: #4f46e5;
+      --green:  #16a34a;
+      --amber:  #d97706;
+      --red:    #dc2626;
+      --slate:  #0f172a;
+      --card:   #1e293b;
+      --border: #334155;
+      --text:   #e2e8f0;
       --muted:  #94a3b8;
     }
-    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background: var(--slate); color: var(--text); line-height: 1.6; }
 
-    /* NAV */
-    nav { display:flex; align-items:center; justify-content:space-between; padding:1rem 2rem; border-bottom:1px solid var(--border); background:rgba(15,23,42,0.97); position:sticky; top:0; z-index:100; backdrop-filter:blur(8px); }
-    .logo { font-size:1.2rem; font-weight:800; color:#fff; letter-spacing:-0.5px; }
-    .logo span { color:#60a5fa; }
-    .nav-links { display:flex; align-items:center; gap:0.25rem; }
-    nav a { color:var(--muted); text-decoration:none; font-size:0.875rem; padding:.4rem .75rem; border-radius:6px; transition:all .2s; }
-    nav a:hover { color:#fff; background:rgba(255,255,255,0.05); }
-    .live-badge { display:inline-flex; align-items:center; gap:6px; background:rgba(22,163,74,0.15); border:1px solid rgba(22,163,74,0.3); color:#4ade80; font-size:0.7rem; font-weight:600; padding:.25rem .6rem; border-radius:99px; margin-left:1rem; }
-    .pulse-dot { width:6px; height:6px; border-radius:50%; background:#4ade80; animation:pulse 2s infinite; }
-    @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.4;transform:scale(1.3)} }
-    .nav-count { background:var(--blue); color:#fff; font-size:0.65rem; font-weight:700; padding:.1rem .4rem; border-radius:99px; margin-left:.3rem; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: var(--slate);
+      color: var(--text);
+      line-height: 1.6;
+    }
 
-    /* HERO */
-    .hero { padding:5rem 2rem 4rem; text-align:center; background:radial-gradient(ellipse 80% 50% at 50% 0%, rgba(37,99,235,0.12) 0%, transparent 70%); border-bottom:1px solid var(--border); }
-    .hero-eyebrow { display:inline-flex; align-items:center; gap:8px; background:rgba(37,99,235,0.1); border:1px solid rgba(37,99,235,0.25); color:#93c5fd; font-size:0.75rem; font-weight:600; padding:.35rem 1rem; border-radius:99px; margin-bottom:1.5rem; letter-spacing:.5px; text-transform:uppercase; }
-    .hero h1 { font-size:clamp(2rem,5vw,3.5rem); font-weight:800; color:#fff; line-height:1.15; max-width:780px; margin:0 auto 1.25rem; letter-spacing:-1px; }
-    .hero h1 em { color:#60a5fa; font-style:normal; }
-    .hero p { font-size:1.1rem; color:var(--muted); max-width:580px; margin:0 auto 2.5rem; }
-    .hero-ctas { display:flex; gap:1rem; justify-content:center; flex-wrap:wrap; }
-    .btn { display:inline-flex; align-items:center; gap:8px; padding:.75rem 1.5rem; border-radius:8px; font-weight:600; font-size:.95rem; text-decoration:none; cursor:pointer; border:none; transition:all .2s; }
-    .btn-primary { background:var(--blue); color:#fff; }
-    .btn-primary:hover { background:#1d4ed8; transform:translateY(-1px); box-shadow:0 8px 25px rgba(37,99,235,0.4); }
-    .btn-secondary { background:rgba(255,255,255,0.05); color:var(--text); border:1px solid var(--border); }
-    .btn-secondary:hover { background:rgba(255,255,255,0.1); }
+    /* ── Nav ─────────────────────────────────────────────── */
+    nav {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 1rem 2rem;
+      border-bottom: 1px solid var(--border);
+      background: rgba(15,23,42,0.95);
+      position: sticky; top: 0; z-index: 100;
+      backdrop-filter: blur(8px);
+    }
+    .logo { font-size: 1.25rem; font-weight: 700; color: #fff; }
+    .logo span { color: #60a5fa; }
+    nav a {
+      color: var(--muted); text-decoration: none; font-size: 0.9rem;
+      margin-left: 1.5rem; transition: color .2s;
+    }
+    nav a:hover { color: #fff; }
+    .api-btn {
+      background: var(--blue); color: #fff !important;
+      padding: .4rem 1rem; border-radius: 6px; font-weight: 600;
+    }
+    .api-btn:hover { background: #1d4ed8 !important; }
 
-    /* STATS BAR */
-    .stats-bar { display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:0; border-bottom:1px solid var(--border); border-top:1px solid var(--border); background:rgba(15,23,42,0.6); }
-    .stat-item { padding:1.5rem 2rem; text-align:center; border-right:1px solid var(--border); }
-    .stat-item:last-child { border-right:none; }
-    .stat-num { font-size:2rem; font-weight:800; color:#fff; font-variant-numeric:tabular-nums; }
-    .stat-label { font-size:0.75rem; color:var(--muted); margin-top:.25rem; text-transform:uppercase; letter-spacing:.5px; }
-    .stat-num.green { color:#4ade80; }
-    .stat-num.amber { color:#fbbf24; }
-    .stat-num.red { color:#f87171; }
-    .stat-num.blue { color:#60a5fa; }
+    /* ── Hero ────────────────────────────────────────────── */
+    .hero {
+      text-align: center;
+      padding: 5rem 2rem 3rem;
+      background: radial-gradient(ellipse at 50% 0%, rgba(79,70,229,.25) 0%, transparent 70%);
+    }
+    .badge {
+      display: inline-block;
+      background: rgba(79,70,229,.2);
+      color: #a5b4fc;
+      border: 1px solid rgba(79,70,229,.4);
+      border-radius: 999px;
+      padding: .25rem .9rem;
+      font-size: .8rem;
+      font-weight: 600;
+      letter-spacing: .05em;
+      margin-bottom: 1.5rem;
+    }
+    .hero h1 {
+      font-size: clamp(2rem, 5vw, 3.5rem);
+      font-weight: 800;
+      line-height: 1.15;
+      margin-bottom: 1.25rem;
+      background: linear-gradient(135deg, #fff 40%, #93c5fd);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .hero p {
+      max-width: 640px; margin: 0 auto 2.5rem;
+      font-size: 1.15rem; color: var(--muted);
+    }
+    .hero-btns { display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap; }
+    .btn-primary {
+      background: var(--indigo); color: #fff;
+      padding: .75rem 1.75rem; border-radius: 8px;
+      font-weight: 600; text-decoration: none; font-size: 1rem;
+      transition: background .2s;
+    }
+    .btn-primary:hover { background: #4338ca; }
+    .btn-secondary {
+      background: var(--card); color: var(--text);
+      padding: .75rem 1.75rem; border-radius: 8px;
+      font-weight: 600; text-decoration: none; font-size: 1rem;
+      border: 1px solid var(--border);
+      transition: background .2s;
+    }
+    .btn-secondary:hover { background: #2d3f55; }
 
-    /* SECTION */
-    .section { max-width:1100px; margin:0 auto; padding:3rem 2rem; }
-    .section-title { font-size:1.5rem; font-weight:700; color:#fff; margin-bottom:.5rem; }
-    .section-sub { color:var(--muted); font-size:.9rem; margin-bottom:2rem; }
+    /* ── Stats strip ─────────────────────────────────────── */
+    .stats {
+      display: flex; justify-content: center; flex-wrap: wrap; gap: 2rem;
+      padding: 2rem;
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+    }
+    .stat { text-align: center; }
+    .stat-value { font-size: 2rem; font-weight: 800; color: #60a5fa; }
+    .stat-label { font-size: .85rem; color: var(--muted); margin-top: .25rem; }
 
-    /* COMMAND CENTER */
-    .command-center { background:var(--slate); border-bottom:1px solid var(--border); padding:3rem 2rem; }
-    .cc-inner { max-width:1100px; margin:0 auto; }
-    .cc-grid { display:grid; grid-template-columns:1fr 1fr; gap:1.5rem; margin-top:2rem; }
-    @media(max-width:768px){ .cc-grid { grid-template-columns:1fr; } }
-    .chart-card { background:var(--card); border:1px solid var(--border); border-radius:12px; padding:1.5rem; }
-    .chart-title { font-size:.85rem; font-weight:600; color:#fff; margin-bottom:1rem; }
-    .chart-sub { font-size:.72rem; color:var(--muted); margin-top:.5rem; }
-    svg text { font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; }
+    /* ── Section layout ──────────────────────────────────── */
+    section { padding: 3rem 2rem; max-width: 1200px; margin: 0 auto; }
+    h2 { font-size: 1.6rem; font-weight: 700; margin-bottom: .5rem; }
+    .section-sub { color: var(--muted); font-size: 1rem; margin-bottom: 2rem; }
 
-    /* TABS */
-    .tabs { display:flex; gap:.5rem; margin-bottom:1.5rem; border-bottom:1px solid var(--border); padding-bottom:0; }
-    .tab { padding:.6rem 1.25rem; border-radius:8px 8px 0 0; font-size:.875rem; font-weight:600; cursor:pointer; background:none; border:1px solid transparent; border-bottom:none; color:var(--muted); transition:all .2s; position:relative; bottom:-1px; }
-    .tab.active { color:#fff; background:var(--card); border-color:var(--border); border-bottom-color:var(--card); }
-    .tab:not(.active):hover { color:#fff; }
-    .tab-panel { display:none; }
-    .tab-panel.active { display:block; }
+    /* ── How it works ────────────────────────────────────── */
+    .steps {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 1.5rem;
+    }
+    .step {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.5rem;
+    }
+    .step-icon {
+      font-size: 2rem; margin-bottom: .75rem;
+    }
+    .step h3 { font-size: 1rem; font-weight: 700; margin-bottom: .5rem; }
+    .step p { font-size: .9rem; color: var(--muted); }
 
-    /* REG CARDS */
-    .reg-grid { display:grid; gap:1rem; }
-    .reg-card { background:var(--card); border:1px solid var(--border); border-radius:12px; padding:1.25rem 1.5rem; cursor:pointer; transition:all .2s; position:relative; overflow:hidden; }
-    .reg-card::before { content:''; position:absolute; left:0; top:0; bottom:0; width:4px; background:var(--blue); border-radius:4px 0 0 4px; }
-    .reg-card.high::before { background:#ef4444; }
-    .reg-card.medium::before { background:#f59e0b; }
-    .reg-card.low::before { background:#22c55e; }
-    .reg-card:hover { border-color:rgba(96,165,250,0.4); box-shadow:0 0 0 1px rgba(96,165,250,0.2); transform:translateY(-1px); }
-    .reg-top { display:flex; align-items:flex-start; justify-content:space-between; gap:1rem; margin-bottom:1rem; }
-    .reg-meta { display:flex; gap:.5rem; align-items:center; flex-wrap:wrap; margin-bottom:.4rem; }
-    .reg-docnum { font-size:.7rem; font-family:monospace; color:#93c5fd; background:rgba(147,197,253,0.1); padding:.15rem .5rem; border-radius:4px; }
-    .reg-agency { font-size:.7rem; color:var(--muted); }
-    .reg-title { font-size:.95rem; font-weight:600; color:#fff; line-height:1.4; }
-    .badges { display:flex; flex-direction:column; gap:.35rem; align-items:flex-end; flex-shrink:0; }
-    .badge { font-size:.7rem; font-weight:700; padding:.2rem .55rem; border-radius:6px; white-space:nowrap; }
-    .badge-drift-high { background:rgba(239,68,68,0.15); color:#f87171; border:1px solid rgba(239,68,68,0.3); }
-    .badge-drift-med { background:rgba(245,158,11,0.15); color:#fbbf24; border:1px solid rgba(245,158,11,0.3); }
-    .badge-drift-low { background:rgba(34,197,94,0.15); color:#4ade80; border:1px solid rgba(34,197,94,0.3); }
-    .badge-jsd { background:rgba(139,92,246,0.15); color:#c4b5fd; border:1px solid rgba(139,92,246,0.3); }
-    .impact-box { background:rgba(37,99,235,0.07); border:1px solid rgba(37,99,235,0.2); border-radius:8px; padding:.75rem 1rem; margin-bottom:1rem; }
-    .impact-label { font-size:.7rem; color:#93c5fd; font-weight:600; text-transform:uppercase; letter-spacing:.5px; margin-bottom:.25rem; }
-    .impact-num { font-size:1.4rem; font-weight:800; color:#fff; }
-    .impact-range { font-size:.75rem; color:var(--muted); margin-top:.1rem; }
-    .impact-institutions { font-size:.7rem; color:#4ade80; margin-top:.3rem; }
-    .ci-bar-wrap { margin:.75rem 0 .5rem; }
-    .ci-bar-label { display:flex; justify-content:space-between; font-size:.7rem; color:var(--muted); margin-bottom:.3rem; }
-    .ci-track { height:6px; background:rgba(255,255,255,0.06); border-radius:99px; position:relative; overflow:visible; }
-    .ci-fill { height:100%; border-radius:99px; position:absolute; }
-    .ci-center { position:absolute; top:-2px; width:10px; height:10px; border-radius:50%; border:2px solid #0f172a; }
-    .reg-measures { display:flex; gap:1.25rem; flex-wrap:wrap; margin-top:.75rem; font-size:.75rem; color:var(--muted); }
-    .reg-measures span b { color:var(--text); }
-    .plain-english { font-size:.8rem; color:var(--muted); line-height:1.5; margin-top:.75rem; padding:.75rem 1rem; background:rgba(15,23,42,0.6); border-radius:8px; border-left:3px solid var(--blue); }
-    .plain-english strong { color:#93c5fd; display:block; margin-bottom:.25rem; font-size:.7rem; text-transform:uppercase; letter-spacing:.5px; }
-    .reg-card.loading { opacity:.5; pointer-events:none; }
-    .skeleton { background:linear-gradient(90deg, var(--card) 25%, rgba(255,255,255,0.04) 50%, var(--card) 75%); background-size:200% 100%; animation:shimmer 1.5s infinite; border-radius:6px; height:14px; margin:.4rem 0; }
-    @keyframes shimmer { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
+    /* ── Live feed ───────────────────────────────────────── */
+    .filters {
+      display: flex; gap: .75rem; flex-wrap: wrap; margin-bottom: 1.5rem;
+    }
+    .filter-btn {
+      background: var(--card);
+      border: 1px solid var(--border);
+      color: var(--muted);
+      padding: .4rem .9rem;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: .85rem;
+      transition: all .2s;
+    }
+    .filter-btn.active, .filter-btn:hover {
+      background: var(--indigo);
+      border-color: var(--indigo);
+      color: #fff;
+    }
+    .reg-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+      gap: 1.25rem;
+    }
+    .reg-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.25rem;
+      transition: border-color .2s, transform .2s;
+      cursor: default;
+    }
+    .reg-card:hover { border-color: #4f46e5; transform: translateY(-2px); }
+    .reg-card.high-risk { border-left: 3px solid var(--red); }
+    .reg-card.medium-risk { border-left: 3px solid var(--amber); }
+    .reg-card.low-risk { border-left: 3px solid var(--green); }
 
-    /* MODAL */
-    .modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.75); z-index:999; backdrop-filter:blur(4px); overflow-y:auto; }
-    .modal-overlay.open { display:flex; align-items:flex-start; justify-content:center; padding:2rem 1rem; }
-    .modal { background:#1a2540; border:1px solid var(--border); border-radius:16px; width:100%; max-width:740px; margin:auto; position:relative; }
-    .modal-header { padding:1.5rem 1.5rem 1rem; border-bottom:1px solid var(--border); display:flex; justify-content:space-between; align-items:flex-start; gap:1rem; }
-    .modal-title { font-size:1.1rem; font-weight:700; color:#fff; line-height:1.4; }
-    .modal-close { background:none; border:none; color:var(--muted); cursor:pointer; font-size:1.3rem; line-height:1; padding:.25rem; flex-shrink:0; }
-    .modal-close:hover { color:#fff; }
-    .modal-body { padding:1.5rem; }
-    .modal-grid { display:grid; grid-template-columns:1fr 1fr; gap:1rem; margin-bottom:1.25rem; }
-    @media(max-width:600px){ .modal-grid { grid-template-columns:1fr; } }
-    .modal-stat { background:rgba(15,23,42,0.6); border:1px solid var(--border); border-radius:10px; padding:1rem; }
-    .modal-stat-label { font-size:.7rem; color:var(--muted); text-transform:uppercase; letter-spacing:.5px; margin-bottom:.35rem; }
-    .modal-stat-value { font-size:1.5rem; font-weight:800; color:#fff; }
-    .modal-stat-sub { font-size:.75rem; color:var(--muted); margin-top:.2rem; }
-    .diff-block { margin-top:1rem; }
-    .diff-title { font-size:.8rem; font-weight:600; color:var(--muted); text-transform:uppercase; letter-spacing:.5px; margin-bottom:.75rem; }
-    .diff-pair { margin-bottom:.75rem; border-radius:8px; overflow:hidden; border:1px solid var(--border); }
-    .diff-old { background:rgba(239,68,68,0.06); border-left:3px solid #ef4444; padding:.6rem .8rem; font-size:.8rem; color:#fca5a5; line-height:1.5; }
-    .diff-new { background:rgba(34,197,94,0.06); border-left:3px solid #22c55e; padding:.6rem .8rem; font-size:.8rem; color:#86efac; line-height:1.5; }
-    .diff-label { font-size:.65rem; font-weight:700; text-transform:uppercase; margin-bottom:.25rem; opacity:.6; }
-    .actions-list { display:flex; flex-direction:column; gap:.5rem; margin-top:1rem; }
-    .action-item { display:flex; align-items:flex-start; gap:.75rem; background:rgba(37,99,235,0.07); border:1px solid rgba(37,99,235,0.15); border-radius:8px; padding:.75rem 1rem; }
-    .action-num { font-size:.7rem; font-weight:800; color:var(--blue); background:rgba(37,99,235,0.2); width:22px; height:22px; border-radius:50%; display:flex; align-items:center; justify-content:center; flex-shrink:0; margin-top:.05rem; }
-    .action-text { font-size:.8rem; color:var(--text); line-height:1.4; }
-    .section-divider { border:none; border-top:1px solid var(--border); margin:1.25rem 0; }
+    .card-header {
+      display: flex; align-items: flex-start;
+      justify-content: space-between; gap: .75rem; margin-bottom: .75rem;
+    }
+    .card-title {
+      font-weight: 600; font-size: .95rem; line-height: 1.4;
+      flex: 1;
+    }
+    .risk-badge {
+      flex-shrink: 0;
+      padding: .2rem .6rem;
+      border-radius: 999px;
+      font-size: .75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .05em;
+    }
+    .risk-high { background: rgba(220,38,38,.15); color: #fca5a5; }
+    .risk-medium { background: rgba(217,119,6,.15); color: #fcd34d; }
+    .risk-low { background: rgba(22,163,74,.15); color: #86efac; }
 
-    /* TECH STACK */
-    .tech-section { background:rgba(15,23,42,0.7); border-top:1px solid var(--border); border-bottom:1px solid var(--border); padding:3rem 2rem; }
-    .tech-inner { max-width:1100px; margin:0 auto; }
-    .tech-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:1rem; margin-top:2rem; }
-    .tech-card { background:var(--card); border:1px solid var(--border); border-radius:10px; padding:1.25rem; display:flex; align-items:flex-start; gap:.75rem; }
-    .tech-icon { font-size:1.4rem; flex-shrink:0; }
-    .tech-name { font-size:.85rem; font-weight:700; color:#fff; }
-    .tech-desc { font-size:.75rem; color:var(--muted); margin-top:.2rem; line-height:1.4; }
+    .card-meta {
+      display: flex; flex-wrap: wrap; gap: .5rem;
+      margin-bottom: .75rem;
+    }
+    .meta-tag {
+      background: rgba(255,255,255,.06);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: .15rem .5rem;
+      font-size: .75rem;
+      color: var(--muted);
+    }
 
-    /* HOW IT WORKS */
-    .how-steps { display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:1.5rem; margin-top:2rem; }
-    .step { text-align:center; padding:1.5rem 1rem; }
-    .step-num { width:48px; height:48px; border-radius:50%; background:rgba(37,99,235,0.15); border:2px solid rgba(37,99,235,0.4); color:#60a5fa; font-size:1.2rem; font-weight:800; display:inline-flex; align-items:center; justify-content:center; margin-bottom:1rem; }
-    .step h3 { font-size:.95rem; font-weight:700; color:#fff; margin-bottom:.5rem; }
-    .step p { font-size:.82rem; color:var(--muted); line-height:1.5; }
+    .drift-bar-wrap {
+      margin-bottom: .5rem;
+    }
+    .drift-bar-label {
+      display: flex; justify-content: space-between;
+      font-size: .75rem; color: var(--muted); margin-bottom: .25rem;
+    }
+    .drift-bar-track {
+      background: rgba(255,255,255,.08);
+      border-radius: 999px; height: 6px; overflow: hidden;
+    }
+    .drift-bar-fill {
+      height: 100%; border-radius: 999px;
+      transition: width .6s ease;
+    }
 
-    /* FOOTER */
-    footer { border-top:1px solid var(--border); padding:2rem; text-align:center; color:var(--muted); font-size:.8rem; }
-    footer a { color:#60a5fa; text-decoration:none; }
+    .card-metrics {
+      display: grid; grid-template-columns: 1fr 1fr;
+      gap: .5rem; margin-top: .75rem;
+    }
+    .metric {
+      background: rgba(255,255,255,.04);
+      border-radius: 6px;
+      padding: .5rem .75rem;
+    }
+    .metric-label { font-size: .7rem; color: var(--muted); margin-bottom: .15rem; }
+    .metric-value { font-size: .95rem; font-weight: 700; }
 
-    /* FR LIVE FEED */
-    .fr-card { background:var(--card); border:1px solid var(--border); border-radius:10px; padding:1.25rem; margin-bottom:.75rem; }
-    .fr-title { font-size:.9rem; font-weight:600; color:#fff; margin-bottom:.4rem; line-height:1.4; }
-    .fr-meta { display:flex; gap:.75rem; flex-wrap:wrap; font-size:.72rem; color:var(--muted); margin-bottom:.75rem; }
-    .fr-impact { display:flex; align-items:center; gap:.5rem; background:rgba(37,99,235,0.08); border:1px solid rgba(37,99,235,0.2); border-radius:6px; padding:.5rem .75rem; margin-bottom:.5rem; }
-    .fr-impact-num { font-size:1rem; font-weight:800; color:#fff; }
-    .fr-impact-suffix { font-size:.7rem; color:#93c5fd; margin-left:.15rem; }
-    .fr-impact-range { font-size:.7rem; color:var(--muted); margin-left:auto; }
-    .fr-drift-row { display:flex; align-items:center; gap:.5rem; }
-    .fr-drift-bar { flex:1; height:5px; background:rgba(255,255,255,0.06); border-radius:99px; overflow:hidden; }
-    .fr-drift-fill { height:100%; border-radius:99px; }
-    .fr-drift-val { font-size:.7rem; font-family:monospace; color:var(--muted); width:3rem; text-align:right; }
-    .fr-institutions { font-size:.7rem; color:#4ade80; margin-top:.4rem; }
-    .spinner { display:inline-block; width:20px; height:20px; border:2px solid var(--border); border-top-color:var(--blue); border-radius:50%; animation:spin .7s linear infinite; }
-    @keyframes spin { to{transform:rotate(360deg)} }
-    .tag { display:inline-block; font-size:.65rem; font-weight:600; padding:.15rem .45rem; border-radius:4px; text-transform:uppercase; letter-spacing:.3px; }
-    .tag-rule { background:rgba(79,70,229,0.2); color:#a5b4fc; }
-    .tag-proposed { background:rgba(245,158,11,0.2); color:#fcd34d; }
-    .tag-final { background:rgba(22,163,74,0.2); color:#6ee7b7; }
-    .tag-notice { background:rgba(100,116,139,0.2); color:#cbd5e1; }
+    /* ── Explanation section ──────────────────────────────── */
+    .explainer {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 2rem;
+      margin-top: 1rem;
+    }
+    .explainer h3 {
+      font-size: 1.1rem; font-weight: 700; margin-bottom: 1rem;
+      color: #93c5fd;
+    }
+    .term-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 1rem;
+    }
+    .term {
+      border-left: 2px solid var(--indigo);
+      padding-left: 1rem;
+    }
+    .term-name { font-weight: 700; font-size: .9rem; margin-bottom: .25rem; }
+    .term-def { font-size: .85rem; color: var(--muted); }
+
+    /* ── Footer ──────────────────────────────────────────── */
+    footer {
+      border-top: 1px solid var(--border);
+      padding: 2rem;
+      text-align: center;
+      color: var(--muted);
+      font-size: .85rem;
+    }
+    footer a { color: #60a5fa; text-decoration: none; }
+
+    /* ── Loading / empty ──────────────────────────────────── */
+    .loading {
+      text-align: center; padding: 3rem; color: var(--muted);
+    }
+    .spinner {
+      display: inline-block; width: 32px; height: 32px;
+      border: 3px solid var(--border);
+      border-top-color: var(--indigo);
+      border-radius: 50%;
+      animation: spin .7s linear infinite;
+      margin-bottom: 1rem;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
   </style>
 </head>
 <body>
 
-<!-- NAV -->
+<!-- ── Nav ──────────────────────────────────────────────────── -->
 <nav>
-  <div style="display:flex;align-items:center;gap:.5rem;">
-    <div class="logo">Compliance<span>IQ</span></div>
-    <div class="live-badge"><span class="pulse-dot"></span> LIVE</div>
-  </div>
-  <div class="nav-links">
-    <a href="#feed">Feed</a>
-    <a href="#command">Analytics</a>
-    <a href="#stack">Stack</a>
-    <a href="/docs" target="_blank">API Docs ↗</a>
-    <a href="/api/v1/change-scores?limit=5" target="_blank" style="background:var(--blue);color:#fff;padding:.4rem .9rem;border-radius:6px;font-weight:600;margin-left:.5rem;">
-      Live API ↗
-    </a>
+  <div class="logo">Compliance<span>IQ</span></div>
+  <div>
+    <a href="#how-it-works">How it works</a>
+    <a href="#live-feed">Live Feed</a>
+    <a href="#glossary">Glossary</a>
+    <a href="/docs" class="api-btn">API Docs →</a>
   </div>
 </nav>
 
-<!-- HERO -->
+<!-- ── Hero ─────────────────────────────────────────────────── -->
 <div class="hero">
-  <div class="hero-eyebrow">⚡ Real-time Regulatory Intelligence</div>
-  <h1>Know which banking regulations changed<br/><em>before they cost you</em>.</h1>
-  <p>ComplianceIQ monitors Federal Register rules in real-time, detects semantic drift with NLP, estimates dollar impact, and surfaces what changed — so your compliance team acts on facts, not guesswork.</p>
-  <div class="hero-ctas">
-    <button class="btn btn-primary" onclick="document.getElementById('feed').scrollIntoView({behavior:'smooth'})">
-      View Regulation Feed
-    </button>
-    <a href="/docs" target="_blank" class="btn btn-secondary">Explore API Docs ↗</a>
+  <div class="badge">🏦 Banking Regulatory Intelligence · Live Demo</div>
+  <h1>Know which banking<br>regulations changed<br>before they cost you.</h1>
+  <p>ComplianceIQ reads every US banking regulation published by the OCC, FDIC, FRB, and CFPB — and tells you in plain English which ones matter, why, and how much money is at stake.</p>
+  <div class="hero-btns">
+    <a href="#live-feed" class="btn-primary">See Live Regulations ↓</a>
+    <a href="/docs" class="btn-secondary">Explore the API</a>
   </div>
 </div>
 
-<!-- STATS BAR -->
-<div class="stats-bar">
-  <div class="stat-item">
-    <div class="stat-num blue" id="stat-total">—</div>
-    <div class="stat-label">Regulations Tracked</div>
+<!-- ── Stats strip ───────────────────────────────────────────── -->
+<div class="stats">
+  <div class="stat">
+    <div class="stat-value" id="total-regs">—</div>
+    <div class="stat-label">Regulations tracked</div>
   </div>
-  <div class="stat-item">
-    <div class="stat-num amber" id="stat-flagged">—</div>
-    <div class="stat-label">Flagged for Review</div>
+  <div class="stat">
+    <div class="stat-value" id="flagged-count">—</div>
+    <div class="stat-label">Flagged for review</div>
   </div>
-  <div class="stat-item">
-    <div class="stat-num red" id="stat-impact">$2.4T+</div>
-    <div class="stat-label">Est. Capital at Risk</div>
+  <div class="stat">
+    <div class="stat-value" id="agency-count">—</div>
+    <div class="stat-label">Regulatory agencies</div>
   </div>
-  <div class="stat-item">
-    <div class="stat-num green">5</div>
-    <div class="stat-label">Agencies Monitored</div>
+  <div class="stat">
+    <div class="stat-value">3</div>
+    <div class="stat-label">Detection methods</div>
   </div>
-  <div class="stat-item">
-    <div class="stat-num blue">3</div>
-    <div class="stat-label">Detection Methods</div>
+  <div class="stat">
+    <div class="stat-value">178</div>
+    <div class="stat-label">Tests passing</div>
   </div>
 </div>
 
-<!-- COMMAND CENTER -->
-<div class="command-center" id="command">
-  <div class="cc-inner">
-    <div class="section-title">Command Center</div>
-    <div class="section-sub">Live analytics across all monitored regulations — updated on each pipeline run</div>
-    <div class="cc-grid">
-      <div class="chart-card">
-        <div class="chart-title">Semantic Drift by Regulation</div>
-        <svg id="drift-chart" width="100%" height="200" viewBox="0 0 460 200"></svg>
-        <div class="chart-sub">Bars above 15% trigger full agent analysis via Airflow DAG</div>
+<!-- ── How it works ─────────────────────────────────────────── -->
+<section id="how-it-works">
+  <h2>How it works</h2>
+  <p class="section-sub">Four steps from a published regulation to a dollar figure on your desk.</p>
+  <div class="steps">
+    <div class="step">
+      <div class="step-icon">📡</div>
+      <h3>1. Fetch</h3>
+      <p>Every day, a pipeline pulls the latest rules from the Federal Register, FDIC, and Federal Reserve APIs — automatically, no manual reading required.</p>
+    </div>
+    <div class="step">
+      <div class="step-icon">🔬</div>
+      <h3>2. Detect change</h3>
+      <p>Three mathematical methods measure how much the language changed from the previous version. Small edits score low. New capital requirements score high.</p>
+    </div>
+    <div class="step">
+      <div class="step-icon">⚖️</div>
+      <h3>3. Measure impact</h3>
+      <p>Causal inference (the same technique used in economics research) estimates how much the regulation will change your bank's risk-weighted assets in dollars.</p>
+    </div>
+    <div class="step">
+      <div class="step-icon">🤖</div>
+      <h3>4. Explain</h3>
+      <p>An AI agent reads the full regulation and writes a plain-English summary: which business lines are affected, which CFR sections changed, and what to do next.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ── Live feed ─────────────────────────────────────────────── -->
+<section id="live-feed">
+  <h2>Live Regulation Feed</h2>
+  <p class="section-sub">Real data from the database, updated continuously. Risk level is based on how much the regulation's language changed from the previous version.</p>
+
+  <div class="filters">
+    <button class="filter-btn active" onclick="filterRegs('all', this)">All Regulations</button>
+    <button class="filter-btn" onclick="filterRegs('high', this)">🔴 High Risk</button>
+    <button class="filter-btn" onclick="filterRegs('medium', this)">🟡 Medium Risk</button>
+    <button class="filter-btn" onclick="filterRegs('low', this)">🟢 Low Risk</button>
+    <button class="filter-btn" onclick="filterRegs('capital', this)">Capital</button>
+    <button class="filter-btn" onclick="filterRegs('aml', this)">AML</button>
+    <button class="filter-btn" onclick="filterRegs('consumer_protection', this)">Consumer</button>
+  </div>
+
+  <div id="reg-grid" class="reg-grid">
+    <div class="loading">
+      <div class="spinner"></div>
+      <div>Loading live regulations…</div>
+    </div>
+  </div>
+</section>
+
+<!-- ── Glossary ──────────────────────────────────────────────── -->
+<section id="glossary">
+  <h2>What do these numbers mean?</h2>
+  <p class="section-sub">Plain-English definitions for every metric on this page.</p>
+  <div class="explainer">
+    <h3>Risk &amp; Change Detection</h3>
+    <div class="term-grid">
+      <div class="term">
+        <div class="term-name">Drift Score (0–1)</div>
+        <div class="term-def">How different the new regulation text is from the old one. 0 = identical. 1 = completely rewritten. Above 0.15 triggers a review flag.</div>
       </div>
-      <div class="chart-card">
-        <div class="chart-title">Estimated Financial Impact by Category ($B)</div>
-        <svg id="impact-chart" width="100%" height="200" viewBox="0 0 460 200"></svg>
-        <div class="chart-sub">Mid-point estimates from Basel III, Dodd-Frank, AML, and Interchange rule changes</div>
+      <div class="term">
+        <div class="term-name">JSD Score</div>
+        <div class="term-def">Jensen-Shannon Divergence — measures how the statistical distribution of words changed. Catches subtle rewording that drift score might miss.</div>
+      </div>
+      <div class="term">
+        <div class="term-name">Wasserstein Score</div>
+        <div class="term-def">Earth Mover's Distance — measures how far the meaning "moved". High scores mean the topic shifted significantly, not just the wording.</div>
+      </div>
+      <div class="term">
+        <div class="term-name">Flagged for Review</div>
+        <div class="term-def">Any regulation where the drift score crosses the 0.15 threshold. These are sent to compliance officers for manual review first.</div>
+      </div>
+      <div class="term">
+        <div class="term-name">Confidence Interval</div>
+        <div class="term-def">The range we're 95% sure the true drift score falls within. A narrow band means the measurement is reliable. A wide band means more data is needed.</div>
+      </div>
+      <div class="term">
+        <div class="term-name">ATT Estimate ($M)</div>
+        <div class="term-def">Average Treatment Effect — the causal estimate of how much this regulation will change a bank's Risk-Weighted Assets in millions of dollars.</div>
       </div>
     </div>
   </div>
-</div>
+</section>
 
-<!-- FEED SECTION -->
-<div id="feed" style="padding:3rem 2rem; max-width:1100px; margin:0 auto;">
-
-  <div class="section-title">Regulatory Intelligence Feed</div>
-  <div class="section-sub">Sorted by semantic drift score — click any card for full analysis, diff, and compliance actions</div>
-
-  <div class="tabs">
-    <button class="tab active" onclick="switchTab('db')">Deep-Analysed (10 regulations)</button>
-    <button class="tab" onclick="switchTab('fr')">Full Database — All Agencies ↗</button>
-  </div>
-
-  <!-- DB TAB -->
-  <div class="tab-panel active" id="tab-db">
-    <div class="reg-grid" id="db-cards">
-      <div style="text-align:center;padding:3rem;color:var(--muted);">
-        <span class="spinner"></span><br/><span style="font-size:.85rem;margin-top:.75rem;display:block;">Loading regulations…</span>
-      </div>
-    </div>
-  </div>
-
-  <!-- FR LIVE TAB -->
-  <div class="tab-panel" id="tab-fr">
-    <div id="fr-cards">
-      <div style="text-align:center;padding:3rem;color:var(--muted);">
-        <span class="spinner"></span><br/><span style="font-size:.85rem;margin-top:.75rem;display:block;">Fetching from Federal Register API…</span>
-      </div>
-    </div>
-  </div>
-
-</div>
-
-<!-- TECH STACK -->
-<div class="tech-section" id="stack">
-  <div class="tech-inner">
-    <div class="section-title">Built with Production-Grade Tech</div>
-    <div class="section-sub">Every component is justified — this isn't a toy stack</div>
-    <div class="tech-grid">
-      <div class="tech-card"><div class="tech-icon">🦜</div><div><div class="tech-name">LangChain + Agents</div><div class="tech-desc">Orchestrates multi-step regulatory analysis — retrieval, summarisation, and causal reasoning in a single agent loop</div></div></div>
-      <div class="tech-card"><div class="tech-icon">🦙</div><div><div class="tech-name">Ollama (Local LLM)</div><div class="tech-desc">Runs Llama-3.1-8B locally for plain-English summaries — no data ever leaves your network</div></div></div>
-      <div class="tech-card"><div class="tech-icon">🧠</div><div><div class="tech-name">ChromaDB</div><div class="tech-desc">Vector store for semantic search across regulation text — powers "find regulations similar to X" queries</div></div></div>
-      <div class="tech-card"><div class="tech-icon">⏱</div><div><div class="tech-name">TimescaleDB</div><div class="tech-desc">Time-series PostgreSQL for storing drift scores over time — enables trend analysis and historical queries</div></div></div>
-      <div class="tech-card"><div class="tech-icon">🔄</div><div><div class="tech-name">Apache Airflow</div><div class="tech-desc">Schedules the full pipeline — FR fetch → embed → score → alert — on a configurable cron cadence</div></div></div>
-      <div class="tech-card"><div class="tech-icon">📐</div><div><div class="tech-name">Causal Inference</div><div class="tech-desc">DiD / CausalImpact models estimate the ATT — how much a regulation actually moved capital ratios or costs</div></div></div>
-      <div class="tech-card"><div class="tech-icon">⚡</div><div><div class="tech-name">FastAPI</div><div class="tech-desc">Async Python REST API with OpenAPI docs, typed schemas, and sub-50ms median response time</div></div></div>
-      <div class="tech-card"><div class="tech-icon">⚛️</div><div><div class="tech-name">React + Recharts</div><div class="tech-desc">Full SPA dashboard with CI bars, JSD badges, section heatmaps, and real-time diff previews</div></div></div>
-      <div class="tech-card"><div class="tech-icon">🐳</div><div><div class="tech-name">Docker + HuggingFace</div><div class="tech-desc">Single-container deployment; zero config for reviewers — everything runs from one docker-compose.yml</div></div></div>
-    </div>
-  </div>
-</div>
-
-<!-- HOW IT WORKS -->
-<div style="border-bottom:1px solid var(--border);">
-  <div class="section">
-    <div class="section-title">How It Works</div>
-    <div class="section-sub">Four automated steps from raw rule text to executive briefing</div>
-    <div class="how-steps">
-      <div class="step"><div class="step-num">1</div><h3>Ingest</h3><p>Airflow DAG polls the Federal Register API every 6 hours, fetching new rules across OCC, FDIC, FRB, CFPB, and FinCEN</p></div>
-      <div class="step"><div class="step-num">2</div><h3>Embed & Score</h3><p>Text is chunked, embedded via sentence-transformers, then scored using TF-IDF cosine drift + Jensen-Shannon divergence + Wasserstein distance</p></div>
-      <div class="step"><div class="step-num">3</div><h3>Causal Analysis</h3><p>For regulations above the drift threshold, a LangChain agent runs DiD causal models to estimate actual financial impact (ATT)</p></div>
-      <div class="step"><div class="step-num">4</div><h3>Alert & Act</h3><p>Compliance officers receive ranked alerts with dollar estimates, diff previews, and step-by-step recommended actions</p></div>
-    </div>
-  </div>
-</div>
-
-<!-- FOOTER -->
+<!-- ── Footer ────────────────────────────────────────────────── -->
 <footer>
-  <p style="margin-bottom:.5rem;">ComplianceIQ — Regulatory Intelligence Platform</p>
-  <p>Built with LangChain · Ollama · ChromaDB · TimescaleDB · Airflow · FastAPI · React</p>
-  <p style="margin-top:.5rem;"><a href="/docs">API Docs</a> · <a href="/api/v1/change-scores">Raw Data</a></p>
+  <p>ComplianceIQ · Built with FastAPI, TimescaleDB, ChromaDB, LangGraph &amp; econml</p>
+  <p style="margin-top:.5rem">
+    <a href="/docs">API Documentation</a> ·
+    <a href="https://github.com/Jainishpatel1019/Complianceiq" target="_blank">GitHub</a>
+  </p>
 </footer>
 
-<!-- MODAL -->
-<div class="modal-overlay" id="modal" onclick="closeModal(event)">
-  <div class="modal" onclick="event.stopPropagation()">
-    <div class="modal-header">
-      <div>
-        <div id="modal-docnum" style="font-size:.7rem;color:#93c5fd;font-family:monospace;margin-bottom:.35rem;"></div>
-        <div class="modal-title" id="modal-title"></div>
-        <div id="modal-agency" style="font-size:.75rem;color:var(--muted);margin-top:.25rem;"></div>
-      </div>
-      <button class="modal-close" onclick="closeModalBtn()">✕</button>
-    </div>
-    <div class="modal-body" id="modal-body"></div>
-  </div>
-</div>
-
 <script>
-// ── ENRICHMENT DATA ───────────────────────────────────────────────────────────
-// Per-regulation enrichment: dollar impact, before/after text, compliance actions
-const ENRICHMENT = {
-  'FR-2024-14821': {
-    impact_low: 280, impact_high: 420, impact_suffix: 'B', impact_currency: '$',
-    affected: '~8,200 US bank holding companies',
-    plain_english: 'Banks must now hold 56% more top-quality capital against their risk-weighted assets. A bank with $10B in RWA that previously needed $800M in CET1 now needs $1.25B — freeing less capital for lending.',
-    before: 'Banks must maintain a minimum Common Equity Tier 1 (CET1) capital ratio of 8.0% of risk-weighted assets under normal conditions.',
-    after: 'Banks must maintain a minimum Common Equity Tier 1 (CET1) capital ratio of 12.5% of risk-weighted assets, with an additional 2.5% conservation buffer applicable at all times.',
-    actions: ['Recalculate CET1 ratios under the 12.5% baseline immediately', 'Model capital shortfall scenarios for Q1-Q4 and stress-test lending capacity', 'Prepare board memo on dividend and share buyback restrictions under the conservation buffer', 'Update ICAAP documentation and submit revised capital plan to primary regulator within 90 days']
-  },
-  'FR-2024-15904': {
-    impact_low: 45, impact_high: 85, impact_suffix: 'B', impact_currency: '$',
-    affected: '~1,100 banks with >$250B assets',
-    plain_english: 'Large banks must hold 15% more liquid assets relative to expected 30-day outflows. This reduces the pool of assets available for deployment and compresses net interest margins.',
-    before: 'Covered institutions must maintain a Liquidity Coverage Ratio of at least 100%, ensuring adequate high-quality liquid assets to cover 30-day stressed outflows.',
-    after: 'Covered institutions must maintain a Liquidity Coverage Ratio of at least 115%, with quarterly reporting of intraday liquidity positions and daily monitoring of collateral positions.',
-    actions: ['Run LCR gap analysis comparing current HQLA to 115% requirement', 'Identify eligible HQLA securities available for purchase within 30 days', 'Update intraday liquidity monitoring procedures and reporting templates', 'Notify Treasury and ALM teams of revised buffer requirements']
-  },
-  'FR-2024-16033': {
-    impact_low: 120, impact_high: 200, impact_suffix: 'B', impact_currency: '$',
-    affected: '~35 G-SIBs globally, ~8 US-domiciled',
-    plain_english: 'The shift from Value-at-Risk to Expected Shortfall captures tail risks that VaR ignores — typically increasing market risk capital requirements by 30-70% for banks with complex trading books.',
-    before: 'Market risk capital requirements shall be calculated using a 99th percentile Value-at-Risk measure over a 10-business-day holding period.',
-    after: 'Market risk capital requirements shall be calculated using a 97.5th percentile Expected Shortfall measure over a 10-business-day holding period, with separate capital charges for non-modellable risk factors.',
-    actions: ['Audit existing VaR models and assess Expected Shortfall implementation gap', 'Identify all non-modellable risk factors (NMRFs) in current trading book positions', 'Engage quantitative risk team to build ES backtesting infrastructure', 'Submit model approval documentation to regulators for FRTB IMA sign-off']
-  },
-  'FR-2024-17205': {
-    impact_low: 8, impact_high: 15, impact_suffix: 'B', impact_currency: '$',
-    affected: '~12,000 US financial institutions',
-    plain_english: 'Lowering the beneficial ownership threshold from 25% to 10% means significantly more individuals must be identified and verified at account opening, increasing KYC workload and system costs.',
-    before: 'Financial institutions must identify and verify beneficial owners who own 25% or more of a legal entity customer at the time of account opening.',
-    after: 'Financial institutions must identify and verify beneficial owners who own 10% or more of a legal entity customer, with enhanced due diligence required for any ownership interest exceeding 5%.',
-    actions: ['Update CDD/KYC policy to reflect 10% ownership threshold', 'Retrofit existing customer records — identify accounts requiring retroactive re-documentation', 'Upgrade onboarding system to capture lower-threshold ownership data fields', 'Train front-line staff on revised beneficial ownership interview procedures']
-  },
-  'FR-2024-18887': {
-    impact_low: 6, impact_high: 10, impact_suffix: 'B', impact_currency: '$',
-    affected: '~4,500 debit-issuing banks',
-    plain_english: 'The cap reduction from $0.21 to $0.144 per transaction directly cuts interchange revenue. A bank processing $5B in annual debit volume loses approximately $34.3M in annual fee income.',
-    before: 'The maximum interchange fee that an issuer may receive for an electronic debit transaction is $0.21 plus 0.05% of the transaction value plus a $0.01 fraud-prevention adjustment.',
-    after: 'The maximum interchange fee that an issuer may receive for an electronic debit transaction is $0.144 plus 0.04% of the transaction value plus a $0.01 fraud-prevention adjustment.',
-    actions: ['Model revenue impact: multiply annual debit volume by $0.066 to estimate annual shortfall', 'Review debit card product P&L and adjust deposit account fee structures if needed', 'Engage merchant acquirers to renegotiate network agreements under new cap schedule', 'Update payment processing systems with revised interchange rate tables by effective date']
-  },
-  'FR-2024-19341': {
-    impact_low: 3, impact_high: 6, impact_suffix: 'B', impact_currency: '$',
-    affected: '~2,100 mortgage servicers and originators',
-    plain_english: 'Extending the HMDA data submission window gives lenders more time but also expands the data fields regulators will scrutinize for fair-lending analysis.',
-    before: 'Covered financial institutions must submit HMDA data to the CFPB by March 1 of the following calendar year.',
-    after: 'Covered financial institutions must submit HMDA data by April 30 of the following calendar year, with mandatory inclusion of 14 additional data fields including automated underwriting system results.',
-    actions: ['Map all 14 new required data fields to existing LOS data capture points', 'Conduct data quality audit on automated underwriting system result codes', 'Update HMDA LAR software to accept and export expanded field set', 'Schedule parallel-run testing before year-end to validate new submission format']
-  },
-  'FR-2024-20114': {
-    impact_low: 25, impact_high: 50, impact_suffix: 'B', impact_currency: '$',
-    affected: '~450 systemically important financial institutions',
-    plain_english: 'Banks must now run annual liquidity stress tests covering three discrete scenarios instead of one, using updated shock tables that reflect 2023 bank run dynamics.',
-    before: 'Covered banking organizations must conduct annual stress tests under one baseline, one adverse, and one severely adverse scenario provided by the Federal Reserve.',
-    after: 'Covered banking organizations must conduct semi-annual stress tests under one baseline, two adverse, and two severely adverse scenarios, incorporating updated liquidity shock assumptions reflective of rapid deposit outflow events.',
-    actions: ['Review and update stress testing models to accommodate two adverse scenario sets', 'Source updated liquidity shock calibrations from Federal Reserve guidance documents', 'Adjust stress testing cadence from annual to semi-annual in model risk framework', 'Allocate additional model validation resources for expanded scenario count']
-  },
-  'FR-2024-21009': {
-    impact_low: 1.5, impact_high: 3, impact_suffix: 'B', impact_currency: '$',
-    affected: '~8,800 community banks under $10B assets',
-    plain_english: 'Raising the appraisal threshold reduces the regulatory burden for small loans but requires updated internal valuation policies to ensure credit quality is not degraded.',
-    before: 'Federally regulated financial institutions are required to obtain a state-certified appraisal for all real estate-related financial transactions of $250,000 or more.',
-    after: 'Federally regulated financial institutions are required to obtain a state-certified appraisal for all real estate-related financial transactions of $400,000 or more, with an exception for rural areas applying a $500,000 threshold.',
-    actions: ['Update credit policy appraisal section to reflect new $400K/$500K thresholds', 'Review loan pipeline for transactions between $250K-$400K currently pending appraisal', 'Establish enhanced evaluation standards for loans using the new exemption', 'Train lending officers on rural property definition and applicable exemption criteria']
-  },
-  'FR-2024-21892': {
-    impact_low: 4, impact_high: 8, impact_suffix: 'B', impact_currency: '$',
-    affected: '~6,500 financial institutions offering prepaid products',
-    plain_english: 'The 90-day pre-rollout disclosure requirement gives regulators and consumers time to review new prepaid products. Banks must build compliance workflows into product launch processes.',
-    before: 'Prepaid account issuers must provide disclosures to consumers before or at the time the consumer acquires a prepaid account.',
-    after: 'Prepaid account issuers must provide standardised fee disclosures in a prescribed two-table format at least 90 days before the product is made available for acquisition, with mandatory digital accessibility standards.',
-    actions: ['Audit all pending prepaid product launches for 90-day disclosure compliance timeline', 'Design disclosure materials using the mandatory two-table format per CFPB template', 'Implement digital accessibility (WCAG 2.1 AA) review into product launch checklist', 'Update product development gating process to incorporate compliance sign-off milestone']
-  },
-  'FR-2024-22764': {
-    impact_low: 2, impact_high: 4, impact_suffix: 'B', impact_currency: '$',
-    affected: '~9,200 institutions filing CTRs',
-    plain_english: 'Raising the CTR threshold eliminates tens of millions of low-value filings annually, reducing compliance costs but requiring financial institutions to recalibrate their transaction monitoring rules.',
-    before: 'Financial institutions must file a Currency Transaction Report (CTR) for any transaction or series of related transactions involving currency of more than $10,000.',
-    after: 'Financial institutions must file a Currency Transaction Report (CTR) for transactions involving currency of more than $15,000, with an exemption framework for established business customers subject to enhanced due diligence.',
-    actions: ['Update transaction monitoring system thresholds from $10K to $15K for CTR triggers', 'Review and revise exempt-person list procedures for established business customers', 'Retrain BSA/AML staff on new thresholds and revised structuring detection parameters', 'Notify core banking system vendors of threshold change and confirm timeline for implementation']
+  const BASE = '';   // same origin
+  let allRegs = [];
+  let currentFilter = 'all';
+
+  function riskLevel(score) {
+    if (!score) return 'low';
+    if (score > 0.25) return 'high';
+    if (score > 0.12) return 'medium';
+    return 'low';
   }
-}
 
-// Sort order for display (by drift, high to low)
-const DOC_ORDER = [
-  'FR-2024-14821','FR-2024-15904','FR-2024-16033','FR-2024-17205',
-  'FR-2024-18887','FR-2024-20114','FR-2024-21009','FR-2024-19341',
-  'FR-2024-21892','FR-2024-22764'
-]
-
-// ── UTILITY ───────────────────────────────────────────────────────────────────
-function severity(drift) {
-  if (drift >= 0.40) return 'high'
-  if (drift >= 0.15) return 'medium'
-  return 'low'
-}
-function driftColour(d) {
-  if (d >= 0.40) return '#ef4444'
-  if (d >= 0.15) return '#f59e0b'
-  return '#22c55e'
-}
-function pct(v) { return Math.round((v||0)*100) + '%' }
-
-// ── SVG CHARTS ────────────────────────────────────────────────────────────────
-function drawDriftChart(scores) {
-  const el = document.getElementById('drift-chart')
-  const W = 460, H = 200, PL = 28, PR = 8, PT = 10, PB = 36
-  const data = scores.slice(0, 12)
-  const bW = (W - PL - PR) / data.length
-  const chartH = H - PT - PB
-  const scaleY = v => H - PB - v * chartH
-
-  let svg = ''
-
-  // Y-axis grid lines + labels
-  ;[0, 0.25, 0.5, 0.75, 1.0].forEach(v => {
-    const y = scaleY(v)
-    svg += `<line x1="${PL}" y1="${y}" x2="${W-PR}" y2="${y}" stroke="#334155" stroke-width="0.5"/>`
-    svg += `<text x="${PL-4}" y="${y+3}" text-anchor="end" font-size="8" fill="#64748b">${Math.round(v*100)}%</text>`
-  })
-
-  // Threshold line at 0.15
-  const ty = scaleY(0.15)
-  svg += `<line x1="${PL}" y1="${ty}" x2="${W-PR}" y2="${ty}" stroke="#f59e0b" stroke-width="1.5" stroke-dasharray="5,3" opacity="0.7"/>`
-  svg += `<text x="${W-PR-2}" y="${ty-4}" text-anchor="end" font-size="7.5" fill="#f59e0b" opacity="0.8">15% alert</text>`
-
-  data.forEach((d, i) => {
-    const x   = PL + i * bW + bW * 0.12
-    const bh  = Math.max(3, (d.drift_score || 0) * chartH)
-    const y   = H - PB - bh
-    const col = driftColour(d.drift_score || 0)
-
-    // Shorten label: take last 5 chars of document_number (most unique part)
-    const raw   = (d.document_number || '').replace(/^FR-/i, '')
-    const label = raw.length > 7 ? raw.slice(-5) : raw
-
-    svg += `<rect x="${x}" y="${y}" width="${bW*0.76}" height="${bh}" fill="${col}" opacity="0.85" rx="2"/>`
-
-    // Drift % label above bar (only if bar is tall enough)
-    if (bh > 18) {
-      svg += `<text x="${x + bW*0.38}" y="${y - 3}" text-anchor="middle" font-size="7.5" font-weight="600" fill="${col}">${pct(d.drift_score)}</text>`
-    }
-
-    // X-axis label — short, horizontal, no rotation
-    svg += `<text x="${x + bW*0.38}" y="${H - PB + 13}" text-anchor="middle" font-size="7.5" fill="#64748b">${label}</text>`
-  })
-
-  el.innerHTML = svg
-}
-
-function drawImpactChart(enrichment) {
-  const el = document.getElementById('impact-chart')
-  const W = 460, H = 200, PL = 80, PR = 60, PT = 10, PB = 20
-  const cats = [
-    { label: 'Capital Rules', val: 350 + 162.5 },
-    { label: 'Market Risk',   val: 160 },
-    { label: 'Liquidity',     val: 65 + 37.5 },
-    { label: 'AML / BSA',     val: 11.5 + 3 },
-    { label: 'Consumer',      val: 8 + 4.5 + 3 + 2 },
-  ]
-  const maxV = cats[0].val
-  const rowH = (H - PT - PB) / cats.length
-
-  let svg = ''
-  cats.forEach((c, i) => {
-    const y = PT + i * rowH
-    const barW = (c.val / maxV) * (W - PL - PR)
-    const col = ['#3b82f6','#8b5cf6','#06b6d4','#f59e0b','#22c55e'][i]
-    svg += `<text x="${PL-6}" y="${y + rowH*0.5 + 4}" text-anchor="end" font-size="8.5" fill="#94a3b8">${c.label}</text>`
-    svg += `<rect x="${PL}" y="${y+rowH*0.15}" width="${barW}" height="${rowH*0.65}" fill="${col}" opacity="0.8" rx="3"/>`
-    svg += `<text x="${PL+barW+5}" y="${y+rowH*0.5+4}" font-size="8" fill="#e2e8f0">$${c.val >= 100 ? Math.round(c.val) + 'B' : c.val.toFixed(0) + 'B'}</text>`
-  })
-  el.innerHTML = svg
-}
-
-// ── Safe JSON fetch ───────────────────────────────────────────────────────────
-// Returns parsed JSON or null — never throws, handles HTML error pages.
-async function safeJson(url) {
-  try {
-    const resp = await fetch(url)
-    const text = await resp.text()
-    if (!text || text.trimStart()[0] !== '[' && text.trimStart()[0] !== '{') return null
-    return JSON.parse(text)
-  } catch { return null }
-}
-
-// ── RENDER DB CARDS ───────────────────────────────────────────────────────────
-async function loadDbCards() {
-  const container = document.getElementById('db-cards')
-  try {
-    // Fetch top 50 first (fast), then silently load more
-    let scores = await safeJson('/api/v1/change-scores?limit=50')
-    if (!Array.isArray(scores)) scores = []
-
-    // Update stats bar immediately with what we have
-    if (scores.length > 0) {
-      document.getElementById('stat-total').textContent = scores.length + '+'
-      const flagged = scores.filter(s => s.flagged_for_analysis).length
-      document.getElementById('stat-flagged').textContent = flagged + '+'
-    }
-
-    // Compute capital impact from known enrichment
-    let totalImpactB = 0
-    for (const s of scores) {
-      const e = ENRICHMENT[s.document_number]
-      if (e) totalImpactB += (e.impact_low + e.impact_high) / 2
-      else if (s.drift_score > 0.15) totalImpactB += 2
-    }
-    if (totalImpactB > 0) {
-      const impactLabel = totalImpactB >= 1000
-        ? `$${(totalImpactB/1000).toFixed(1)}T+` : `$${Math.round(totalImpactB)}B+`
-      document.getElementById('stat-impact').textContent = impactLabel
-    }
-
-    // Draw charts from what we have
-    if (scores.length > 0) {
-      drawDriftChart(scores)
-      drawImpactChart(ENRICHMENT)
-    }
-
-    if (scores.length === 0) {
-      container.innerHTML = '<div style="text-align:center;padding:3rem;color:var(--muted);"><p style="font-size:2rem;margin-bottom:.75rem;">⏳</p><p>Database seeding in progress…</p><p style="font-size:.8rem;margin-top:.5rem;">The bulk seed runs in the background after startup. Refresh in ~2 minutes.</p></div>'
-      return
-    }
-
-    // Render the 10 deep-analysed ones (from ENRICHMENT keys)
-    const enrichedKeys = new Set(Object.keys(ENRICHMENT))
-    const enriched = scores.filter(r => enrichedKeys.has(r.document_number))
-    const displayList = enriched.length > 0 ? enriched : scores.slice(0, 10)
-
-    container.innerHTML = displayList.map(r => renderRegCard(r)).join('')
-
-  } catch(err) {
-    container.innerHTML = `<div style="color:#f87171;padding:1rem;border-radius:8px;border:1px solid rgba(239,68,68,0.3);">
-      <b>Could not load regulations</b><br/><span style="font-size:.8rem;opacity:.7;">${err.message}</span>
-      <br/><button onclick="loadDbCards()" style="margin-top:.5rem;background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);color:#f87171;padding:.3rem .75rem;border-radius:6px;cursor:pointer;font-size:.8rem;">Retry</button>
-    </div>`
+  function riskLabel(level) {
+    return { high: '🔴 High Risk', medium: '🟡 Medium Risk', low: '🟢 Low Risk' }[level];
   }
-}
 
-function renderRegCard(r) {
-  const e = ENRICHMENT[r.document_number] || {}
-  const sev = severity(r.drift_score || 0)
-  const col = driftColour(r.drift_score || 0)
-  const impactMid = e.impact_low && e.impact_high ? ((e.impact_low + e.impact_high) / 2).toFixed(0) : null
-  const ciLow  = Math.max(0,   r.drift_ci_low  ?? (r.drift_score || 0) * 0.85)
-  const ciHigh = Math.min(1.0, r.drift_ci_high ?? (r.drift_score || 0) * 1.15)
-  // Safely escape for onclick attribute
-  const safeR = JSON.stringify(r).replace(/'/g, "&#39;").replace(/</g,'&lt;').replace(/>/g,'&gt;')
+  function fmtDate(iso) {
+    if (!iso) return '—';
+    return new Date(iso).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+  }
 
-  return `
-  <div class="reg-card ${sev}" onclick='openModal(${safeR})'>
-    <div class="reg-top">
-      <div>
-        <div class="reg-meta">
-          <span class="reg-docnum">${r.document_number || '—'}</span>
-          <span class="reg-agency">${r.agency || '—'}</span>
-          ${r.flagged_for_analysis ? '<span style="font-size:.7rem;color:#fbbf24;">⚠ Flagged</span>' : ''}
+  function agencyColor(agency) {
+    const map = { OCC: '#3b82f6', FDIC: '#8b5cf6', FRB: '#06b6d4', CFPB: '#f59e0b', FinCEN: '#10b981' };
+    return map[agency] || '#64748b';
+  }
+
+  function buildCard(reg) {
+    const cs = reg.latest_change_score || {};
+    const drift = cs.drift_score || 0;
+    const level = riskLevel(drift);
+    const pct = Math.min(Math.round(drift * 100), 100);
+    const barColor = level === 'high' ? '#ef4444' : level === 'medium' ? '#f59e0b' : '#22c55e';
+    const typeName = (reg.regulation_type || 'general').replace('_', ' ');
+
+    return `
+      <div class="reg-card ${level}-risk" data-risk="${level}" data-type="${reg.regulation_type || ''}">
+        <div class="card-header">
+          <div class="card-title">${reg.title}</div>
+          <span class="risk-badge risk-${level}">${level}</span>
         </div>
-        <div class="reg-title">${r.title || 'Untitled Regulation'}</div>
-      </div>
-      <div class="badges">
-        <span class="badge badge-drift-${sev}">Drift ${pct(r.drift_score)}</span>
-        ${r.jsd_significant ? '<span class="badge badge-jsd">JSD ✓ sig</span>' : ''}
-      </div>
-    </div>
+        <div class="card-meta">
+          <span class="meta-tag" style="color:${agencyColor(reg.agency)};border-color:${agencyColor(reg.agency)}40">${reg.agency}</span>
+          <span class="meta-tag">${typeName}</span>
+          <span class="meta-tag">${fmtDate(reg.publication_date)}</span>
+          ${cs.flagged_for_analysis ? '<span class="meta-tag" style="color:#fca5a5;border-color:#fca5a580">⚑ Flagged</span>' : ''}
+        </div>
 
-    ${impactMid ? `
-    <div class="impact-box">
-      <div class="impact-label">💰 Estimated Financial Impact</div>
-      <div class="impact-num">${e.impact_currency || '$'}${impactMid}${e.impact_suffix || 'B'}</div>
-      <div class="impact-range">Range: ${e.impact_currency || '$'}${e.impact_low}${e.impact_suffix || 'B'} – ${e.impact_currency || '$'}${e.impact_high}${e.impact_suffix || 'B'}</div>
-      ${e.affected ? `<div class="impact-institutions">Affects ${e.affected}</div>` : ''}
-    </div>` : ''}
+        ${drift ? `
+        <div class="drift-bar-wrap">
+          <div class="drift-bar-label">
+            <span>Language change from previous version</span>
+            <span style="color:${barColor};font-weight:700">${pct}%</span>
+          </div>
+          <div class="drift-bar-track">
+            <div class="drift-bar-fill" style="width:${pct}%;background:${barColor}"></div>
+          </div>
+        </div>
+        <div class="card-metrics">
+          <div class="metric">
+            <div class="metric-label">Drift Score</div>
+            <div class="metric-value" style="color:${barColor}">${drift.toFixed(3)}</div>
+          </div>
+          <div class="metric">
+            <div class="metric-label">Stat. Significance</div>
+            <div class="metric-value">${cs.jsd_p_value ? (cs.jsd_p_value < 0.05 ? '✓ Significant' : 'Not significant') : '—'}</div>
+          </div>
+          <div class="metric">
+            <div class="metric-label">JSD Score</div>
+            <div class="metric-value">${cs.jsd_score ? cs.jsd_score.toFixed(3) : '—'}</div>
+          </div>
+          <div class="metric">
+            <div class="metric-label">Wasserstein</div>
+            <div class="metric-value">${cs.wasserstein_score ? cs.wasserstein_score.toFixed(3) : '—'}</div>
+          </div>
+        </div>
+        ` : `<div style="color:var(--muted);font-size:.85rem">No version changes recorded yet.</div>`}
+      </div>`;
+  }
 
-    <div class="ci-bar-wrap">
-      <div class="ci-bar-label"><span>Semantic Drift  95% CI</span><span>${r.drift_display || pct(r.drift_score)}</span></div>
-      <div class="ci-track">
-        <div class="ci-fill" style="left:${ciLow*100}%;width:${(ciHigh-ciLow)*100}%;background:${col};opacity:0.25;"></div>
-        <div class="ci-center" style="left:calc(${(r.drift_score||0)*100}% - 5px);background:${col};"></div>
-      </div>
-    </div>
-
-    <div class="reg-measures">
-      <span>Drift <b>${r.drift_display || pct(r.drift_score)}</b></span>
-      <span>JSD <b style="color:${r.jsd_significant?'#fbbf24':'inherit'}">${r.jsd_score ? pct(r.jsd_score) : '—'}</b></span>
-      <span>W₂ <b>${r.wasserstein_score ? pct(r.wasserstein_score) : '—'}</b></span>
-      <span>JSD p <b>${r.jsd_p_value ? r.jsd_p_value.toFixed(3) : '—'}</b></span>
-      <span>Composite <b>${r.composite_score ? pct(r.composite_score) : '—'}</b></span>
-    </div>
-
-    ${e.plain_english ? `<div class="plain-english"><strong>💡 Plain English</strong>${e.plain_english}</div>` : ''}
-  </div>`
-}
-
-// ── FEDERAL REGISTER LIVE ─────────────────────────────────────────────────────
-let frLoaded = false
-async function loadFrCards() {
-  if (frLoaded) return
-  frLoaded = true
-  const container = document.getElementById('fr-cards')
-  try {
-    const data = await safeJson('/api/v1/regulations/federal-register?limit=50')
-    const regs = Array.isArray(data) ? data : []
-
+  function renderGrid(regs) {
+    const grid = document.getElementById('reg-grid');
     if (!regs.length) {
-      container.innerHTML = '<div style="text-align:center;padding:3rem;color:var(--muted);"><p style="font-size:1.5rem;margin-bottom:.5rem;">⏳</p><p>Full database is still seeding in the background.</p><p style="font-size:.8rem;margin-top:.5rem;">Regulations will appear here within 2–3 minutes of first launch.</p><button onclick="frLoaded=false;loadFrCards()" style="margin-top:1rem;background:rgba(37,99,235,0.15);border:1px solid rgba(37,99,235,0.3);color:#60a5fa;padding:.4rem 1rem;border-radius:6px;cursor:pointer;font-size:.85rem;">↺ Retry</button></div>'
-      return
+      grid.innerHTML = '<div class="loading">No regulations match this filter.</div>';
+      return;
     }
-    container.innerHTML = regs.map(r => {
-      const col = driftColour(r.drift_score || 0)
-      const sev = severity(r.drift_score || 0)
-      const sevTag = { high: 'badge-drift-high', medium: 'badge-drift-med', low: 'badge-drift-low' }[sev]
-      const typeMap = { capital:'Capital', aml:'AML / BSA', consumer_protection:'Consumer', liquidity:'Liquidity',
-                        market_risk:'Market Risk', operational_risk:'Op Risk', stress_testing:'Stress Test',
-                        reporting:'Reporting', payment:'Payment', crypto:'Crypto', deposit:'Deposit', housing:'Housing' }
-      const typeLabel = typeMap[r.regulation_type] || r.regulation_type || 'Rule'
-      const impactMid = r.impact_low_m && r.impact_high_m ? Math.round((r.impact_low_m + r.impact_high_m) / 2) : null
-      const isFromDb  = r.source === 'federal_register'
-
-      return `
-      <div class="fr-card">
-        <div class="fr-meta">
-          <span class="tag tag-rule">${typeLabel}</span>
-          ${isFromDb ? '<span class="tag" style="background:rgba(34,197,94,0.15);color:#4ade80;">✓ In DB</span>' : ''}
-          <span style="font-weight:600;color:var(--text);font-size:.78rem;">${r.agency || '—'}</span>
-          <span style="font-family:monospace;color:#93c5fd;font-size:.7rem;">${r.document_number || ''}</span>
-          ${r.publication_date ? `<span style="font-size:.7rem;">${r.publication_date}</span>` : ''}
-        </div>
-        <div class="fr-title">${r.title}</div>
-
-        <div style="display:flex;gap:.75rem;align-items:center;margin-top:.75rem;flex-wrap:wrap;">
-          ${impactMid ? `
-          <div class="fr-impact" style="flex:1;min-width:160px;">
-            <span style="font-size:.7rem;color:#93c5fd;margin-right:.4rem;">💰</span>
-            <span class="fr-impact-num">$${impactMid >= 1000 ? (impactMid/1000).toFixed(1)+'B' : impactMid+'M'}</span>
-            <span class="fr-impact-range" style="margin-left:.5rem;">$${r.impact_low_m >= 1000 ? (r.impact_low_m/1000).toFixed(0)+'B' : r.impact_low_m+'M'} – $${r.impact_high_m >= 1000 ? (r.impact_high_m/1000).toFixed(0)+'B' : r.impact_high_m+'M'}</span>
-          </div>` : ''}
-          <span class="badge ${sevTag}" style="flex-shrink:0;">Drift ${pct(r.drift_score)}</span>
-          ${r.jsd_significant ? '<span class="badge badge-jsd" style="flex-shrink:0;">JSD ✓ sig</span>' : ''}
-        </div>
-
-        <div class="fr-drift-row" style="margin-top:.6rem;">
-          <span style="font-size:.7rem;color:var(--muted);width:55px;flex-shrink:0;">Drift</span>
-          <div class="fr-drift-bar"><div class="fr-drift-fill" style="width:${(r.drift_score||0)*100}%;background:${col};"></div></div>
-          <span class="fr-drift-val">${pct(r.drift_score)}</span>
-          ${r.composite_score ? `<span style="font-size:.65rem;color:var(--muted);margin-left:.5rem;">composite ${pct(r.composite_score)}</span>` : ''}
-        </div>
-
-        ${r.affected_institutions ? `<div class="fr-institutions" style="margin-top:.4rem;">Affects ${r.affected_institutions}</div>` : ''}
-        ${r.abstract ? `<div style="font-size:.78rem;color:var(--muted);margin-top:.6rem;line-height:1.5;border-top:1px solid var(--border);padding-top:.5rem;">${r.abstract.slice(0,300)}${r.abstract.length>300?'…':''}</div>` : ''}
-      </div>`
-    }).join('')
-  } catch(err) {
-    container.innerHTML = `<div style="color:#f87171;padding:1rem;border-radius:8px;border:1px solid rgba(239,68,68,0.3);">
-      <b>Could not load full database</b><br/><span style="font-size:.8rem;opacity:.7;">${err.message}</span>
-      <br/><button onclick="frLoaded=false;loadFrCards()" style="margin-top:.5rem;background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);color:#f87171;padding:.3rem .75rem;border-radius:6px;cursor:pointer;font-size:.8rem;">Retry</button>
-    </div>`
-  }
-}
-
-// ── TAB SWITCH ────────────────────────────────────────────────────────────────
-function switchTab(id) {
-  document.querySelectorAll('.tab').forEach((t,i) => t.classList.toggle('active', ['db','fr'][i] === id))
-  document.querySelectorAll('.tab-panel').forEach((p,i) => p.classList.toggle('active', ['tab-db','tab-fr'][i] === 'tab-' + id))
-  if (id === 'fr') loadFrCards()
-}
-
-// ── MODAL ─────────────────────────────────────────────────────────────────────
-function openModal(r) {
-  const e = ENRICHMENT[r.document_number] || {}
-  const sev = severity(r.drift_score || 0)
-  const col = driftColour(r.drift_score || 0)
-  const impactMid = e.impact_low && e.impact_high ? ((e.impact_low + e.impact_high) / 2).toFixed(0) : null
-
-  document.getElementById('modal-docnum').textContent = r.document_number || ''
-  document.getElementById('modal-title').textContent = r.title || 'Regulation Detail'
-  document.getElementById('modal-agency').textContent = r.agency || ''
-
-  let html = `
-  <div class="modal-grid">
-    <div class="modal-stat">
-      <div class="modal-stat-label">Semantic Drift</div>
-      <div class="modal-stat-value" style="color:${col}">${pct(r.drift_score)}</div>
-      <div class="modal-stat-sub">95% CI: [${pct(r.drift_ci_low)} – ${pct(r.drift_ci_high)}]</div>
-    </div>
-    ${impactMid ? `
-    <div class="modal-stat">
-      <div class="modal-stat-label">💰 Est. Financial Impact</div>
-      <div class="modal-stat-value">${e.impact_currency}${impactMid}${e.impact_suffix}</div>
-      <div class="modal-stat-sub">${e.affected || ''}</div>
-    </div>` : `
-    <div class="modal-stat">
-      <div class="modal-stat-label">JSD Score</div>
-      <div class="modal-stat-value">${r.jsd_score ? pct(r.jsd_score) : '—'}</div>
-      <div class="modal-stat-sub">${r.jsd_significant ? '⚠ Statistically significant' : 'Not significant'}</div>
-    </div>`}
-  </div>
-
-  <div class="modal-grid">
-    <div class="modal-stat">
-      <div class="modal-stat-label">JSD Divergence</div>
-      <div class="modal-stat-value" style="font-size:1.2rem">${r.jsd_score ? pct(r.jsd_score) : '—'}</div>
-      <div class="modal-stat-sub">p = ${r.jsd_p_value ? r.jsd_p_value.toFixed(3) : '—'} · ${r.jsd_significant ? '✓ significant' : 'not significant'}</div>
-    </div>
-    <div class="modal-stat">
-      <div class="modal-stat-label">Wasserstein Distance</div>
-      <div class="modal-stat-value" style="font-size:1.2rem">${r.wasserstein_score ? pct(r.wasserstein_score) : '—'}</div>
-      <div class="modal-stat-sub">Composite: ${r.composite_score ? pct(r.composite_score) : '—'}</div>
-    </div>
-  </div>`
-
-  if (e.plain_english) {
-    html += `
-  <hr class="section-divider"/>
-  <div style="background:rgba(37,99,235,0.07);border:1px solid rgba(37,99,235,0.2);border-radius:10px;padding:1rem;">
-    <div style="font-size:.7rem;color:#93c5fd;font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:.5rem;">💡 Plain-English Summary</div>
-    <div style="font-size:.875rem;color:var(--text);line-height:1.6;">${e.plain_english}</div>
-  </div>`
+    grid.innerHTML = regs.map(buildCard).join('');
   }
 
-  if (e.before && e.after) {
-    html += `
-  <hr class="section-divider"/>
-  <div class="diff-block">
-    <div class="diff-title">What Changed</div>
-    <div class="diff-pair">
-      <div class="diff-old"><div class="diff-label">Before</div>${e.before}</div>
-      <div class="diff-new"><div class="diff-label">After</div>${e.after}</div>
-    </div>
-  </div>`
+  function filterRegs(filter, btn) {
+    currentFilter = filter;
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+
+    let filtered = allRegs;
+    if (filter === 'high') filtered = allRegs.filter(r => riskLevel(r.latest_change_score?.drift_score) === 'high');
+    else if (filter === 'medium') filtered = allRegs.filter(r => riskLevel(r.latest_change_score?.drift_score) === 'medium');
+    else if (filter === 'low') filtered = allRegs.filter(r => riskLevel(r.latest_change_score?.drift_score) === 'low');
+    else if (filter !== 'all') filtered = allRegs.filter(r => r.regulation_type === filter);
+
+    renderGrid(filtered);
   }
 
-  if (e.actions && e.actions.length) {
-    html += `
-  <hr class="section-divider"/>
-  <div style="font-size:.8rem;font-weight:700;color:#fff;margin-bottom:.5rem;">Recommended Compliance Actions</div>
-  <div class="actions-list">
-    ${e.actions.map((a,i) => `<div class="action-item"><div class="action-num">${i+1}</div><div class="action-text">${a}</div></div>`).join('')}
-  </div>`
+  async function loadData() {
+    try {
+      const res = await fetch(`${BASE}/api/v1/regulations?page_size=50`);
+      const data = await res.json();
+      allRegs = data.items || data.regulations || data || [];
+
+      // Sort: flagged first, then by drift score desc
+      allRegs.sort((a, b) => {
+        const da = a.latest_change_score?.drift_score || 0;
+        const db = b.latest_change_score?.drift_score || 0;
+        return db - da;
+      });
+
+      // Update stats
+      document.getElementById('total-regs').textContent = data.total || allRegs.length;
+      const flagged = allRegs.filter(r => r.latest_change_score?.flagged_for_analysis).length;
+      document.getElementById('flagged-count').textContent = flagged;
+      const agencies = new Set(allRegs.map(r => r.agency)).size;
+      document.getElementById('agency-count').textContent = agencies;
+
+      renderGrid(allRegs);
+    } catch (err) {
+      document.getElementById('reg-grid').innerHTML =
+        '<div class="loading">Could not load data. Make sure the API is running.</div>';
+      console.error(err);
+    }
   }
 
-  // Causal
-  if (r.causal_estimates && r.causal_estimates.length) {
-    const c = r.causal_estimates[0]
-    const att = c.att_estimate ?? c.att
-    html += `
-  <hr class="section-divider"/>
-  <div class="modal-stat">
-    <div class="modal-stat-label">Causal ATT Estimate</div>
-    <div class="modal-stat-value" style="font-size:1.2rem;color:#a78bfa">${att != null ? (att * 100).toFixed(2) + ' pp' : '—'}</div>
-    <div class="modal-stat-sub">Average Treatment Effect on the Treated — estimated causal impact of this regulation change</div>
-  </div>`
-  }
-
-  document.getElementById('modal-body').innerHTML = html
-  document.getElementById('modal').classList.add('open')
-  document.body.style.overflow = 'hidden'
-}
-
-function closeModal(e) {
-  if (e.target === document.getElementById('modal')) closeModalBtn()
-}
-function closeModalBtn() {
-  document.getElementById('modal').classList.remove('open')
-  document.body.style.overflow = ''
-}
-document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModalBtn() })
-
-// ── LIVE STATS POLLING ────────────────────────────────────────────────────────
-// Polls /api/v1/change-scores/stats every 8s while the bulk seed is running
-// in the background. Once seeding_complete=true, polling stops.
-let _statsPollTimer = null
-
-async function pollStats() {
-  const s = await safeJson('/api/v1/change-scores/stats')
-  if (!s || typeof s !== 'object' || Array.isArray(s)) return
-  if (s.total_regulations > 0) {
-    document.getElementById('stat-total').textContent   = s.total_regulations.toLocaleString()
-    document.getElementById('stat-flagged').textContent = s.flagged.toLocaleString()
-  }
-  if (s.seeding_complete) {
-    clearInterval(_statsPollTimer)
-    document.getElementById('stat-total').title = ''
-  } else {
-    document.getElementById('stat-total').title = 'Seeding in background — count growing…'
-  }
-}
-
-// ── INIT ──────────────────────────────────────────────────────────────────────
-pollStats()
-_statsPollTimer = setInterval(pollStats, 8000)
-loadDbCards()
+  loadData();
 </script>
 </body>
 </html>
