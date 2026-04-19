@@ -23,7 +23,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import RedirectResponse
 from fastapi.staticfiles import StaticFiles
 
-from api.routes import regulations, reports, health, change_scores, causal, graph
+from api.routes import regulations, reports, health, change_scores, causal, graph, refresh
 from api.websockets import router as ws_router
 
 # ── Structured logging setup ─────────────────────────────────────────────────
@@ -104,6 +104,7 @@ app.include_router(change_scores.router, prefix="/api/v1/change-scores", tags=["
 app.include_router(causal.router, prefix="/api/v1/causal", tags=["causal"])
 app.include_router(graph.router,  prefix="/api/v1/graph",  tags=["graph"])
 app.include_router(ws_router, prefix="/ws", tags=["websockets"])
+app.include_router(refresh.router, prefix="/api/v1/refresh", tags=["refresh"])
 
 # ── Static files ──────────────────────────────────────────────────────────────
 # 1. Landing page dashboard (api/static/) — always present in the image

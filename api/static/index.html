@@ -199,6 +199,7 @@
   <div class="hero-ctas">
     <button class="btn btn-primary" onclick="document.getElementById('feed').scrollIntoView({behavior:'smooth'})">View Regulation Feed</button>
     <a href="/docs" target="_blank" class="btn btn-secondary">Explore API Docs ↗</a>
+    <button class="btn btn-secondary" id="sync-btn" onclick="triggerSync()" title="Pull latest Federal Register regulations published today">🔄 Sync Latest</button>
   </div>
 </div>
 
@@ -862,6 +863,50 @@ function openModal(r) {
 function closeModalOverlay(e) { if(e.target===document.getElementById('modal')) closeModal() }
 function closeModal() { document.getElementById('modal').classList.remove('open'); document.body.style.overflow='' }
 document.addEventListener('keydown', e => { if(e.key==='Escape') closeModal() })
+
+// ── SYNC / REFRESH ────────────────────────────────────────────────────────────
+let _syncPoll = null
+
+async function triggerSync() {
+  const btn = document.getElementById('sync-btn')
+  if (!btn) return
+  btn.disabled = true
+  btn.textContent = '⏳ Syncing...'
+
+  try {
+    const resp = await fetch('/api/v1/refresh', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({lookback_days: 7, source: 'auto'})
+    })
+    const data = await resp.json().catch(() => null)
+    if (!data) { btn.textContent = '❌ Error'; setTimeout(() => { btn.disabled=false; btn.textContent='🔄 Sync Latest' }, 3000); return }
+
+    // Poll status until done
+    if (_syncPoll) clearInterval(_syncPoll)
+    _syncPoll = setInterval(async () => {
+      const s = await safeJson('/api/v1/refresh/status')
+      if (!s) return
+      if (s.status === 'done') {
+        clearInterval(_syncPoll)
+        btn.disabled = false
+        btn.textContent = `✅ +${s.inserted} new`
+        setTimeout(() => { btn.textContent = '🔄 Sync Latest' }, 5000)
+        if (s.inserted > 0) { _allLoaded = false; await loadAllCards(); await pollStats() }
+      } else if (s.status === 'error') {
+        clearInterval(_syncPoll)
+        btn.disabled = false
+        btn.textContent = '❌ Failed'
+        setTimeout(() => { btn.textContent = '🔄 Sync Latest' }, 3000)
+      } else {
+        btn.textContent = '⏳ Syncing...'
+      }
+    }, 2000)
+  } catch(e) {
+    btn.disabled = false
+    btn.textContent = '🔄 Sync Latest'
+  }
+}
 
 // ── INIT ──────────────────────────────────────────────────────────────────────
 loadDbCards()

@@ -550,7 +550,7 @@ def run_bulk_seed(target: int = 500) -> None:
 
     # Build the full cartesian product: template × params × agency × year
     records = []
-    years   = list(range(2015, 2025))
+    years   = list(range(2015, 2027))   # 2015 → 2026 inclusive
     for tmpl in _TEMPLATES:
         for params in tmpl["params"]:
             for agency in _AGENCIES:
