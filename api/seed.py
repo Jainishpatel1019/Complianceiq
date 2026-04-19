@@ -254,8 +254,9 @@ async def seed_db(session: AsyncSession, target: int = 3300) -> int:
 
                     reg_id = uuid.uuid4()
 
+                    # ── Step 1: Insert regulation + versions (committed atomically) ──
+                    # This MUST succeed for the record to count.
                     try:
-                        # Insert regulation
                         await session.execute(text("""
                             INSERT INTO regulations
                                 (id, document_number, title, agency, abstract,
@@ -277,7 +278,6 @@ async def seed_db(session: AsyncSession, target: int = 3300) -> int:
                             "meta": json.dumps(meta),
                         })
 
-                        # Insert v1 version — text_hash required (NOT NULL)
                         v1_hash = hashlib.sha256(v1.encode()).hexdigest()
                         await session.execute(text("""
                             INSERT INTO regulation_versions
@@ -285,10 +285,9 @@ async def seed_db(session: AsyncSession, target: int = 3300) -> int:
                                  text_hash, word_count, fetched_at)
                             VALUES (:vid, :rid, 1, :text, :hash, :wc, NOW())
                             ON CONFLICT (regulation_id, version_number) DO NOTHING
-                        """), {"vid": str(uuid.uuid4()), "rid": str(reg_id), "text": v1,
-                               "hash": v1_hash, "wc": len(v1.split())})
+                        """), {"vid": str(uuid.uuid4()), "rid": str(reg_id),
+                               "text": v1, "hash": v1_hash, "wc": len(v1.split())})
 
-                        # Insert v2 version
                         v2_hash = hashlib.sha256(v2.encode()).hexdigest()
                         await session.execute(text("""
                             INSERT INTO regulation_versions
@@ -296,10 +295,21 @@ async def seed_db(session: AsyncSession, target: int = 3300) -> int:
                                  text_hash, word_count, fetched_at)
                             VALUES (:vid, :rid, 2, :text, :hash, :wc, NOW())
                             ON CONFLICT (regulation_id, version_number) DO NOTHING
-                        """), {"vid": str(uuid.uuid4()), "rid": str(reg_id), "text": v2,
-                               "hash": v2_hash, "wc": len(v2.split())})
+                        """), {"vid": str(uuid.uuid4()), "rid": str(reg_id),
+                               "text": v2, "hash": v2_hash, "wc": len(v2.split())})
 
-                        # Insert change score
+                        await session.commit()
+                        inserted += 1
+
+                    except Exception:
+                        await session.rollback()
+                        continue  # skip this record, try next
+
+                    # ── Step 2: Insert change score (best-effort, separate tx) ──
+                    # change_scores is a TimescaleDB hypertable with composite PK
+                    # (id, computed_at). We insert in its own transaction so a
+                    # failure here never rolls back the regulation we just saved.
+                    try:
                         await session.execute(text("""
                             INSERT INTO change_scores
                                 (id, regulation_id, version_old, version_new,
@@ -311,7 +321,6 @@ async def seed_db(session: AsyncSession, target: int = 3300) -> int:
                                  :drift, :ci_lo, :ci_hi,
                                  :jsd, :jsd_p, :wass,
                                  :is_sig, :flagged, NOW())
-                            ON CONFLICT DO NOTHING
                         """), {
                             "id": str(uuid.uuid4()),
                             "rid": str(reg_id),
@@ -324,21 +333,12 @@ async def seed_db(session: AsyncSession, target: int = 3300) -> int:
                             "is_sig": is_sig,
                             "flagged": flagged,
                         })
-
-                        inserted += 1
-
-                        if inserted >= target:
-                            await session.commit()
-                            return inserted
-
-                        # Commit every 10 records — ensures partial runs persist
-                        # even if the task is interrupted mid-way
-                        if inserted % 10 == 0:
-                            await session.commit()
-
-                    except Exception as exc:
+                        await session.commit()
+                    except Exception:
                         await session.rollback()
-                        # Skip this record and continue
-                        continue
+                        # change_score failed — regulation still saved, continue
+
+                    if inserted >= target:
+                        return inserted
 
     return inserted

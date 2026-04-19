@@ -61,7 +61,7 @@ async def run():
     engine = create_async_engine(db_url, echo=False)
     async_session = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
     async with async_session() as session:
-        n = await seed_db(session, target=100)
+        n = await seed_db(session, target=500)
     await engine.dispose()
     print(f'Background seed complete: {n} records inserted')
 

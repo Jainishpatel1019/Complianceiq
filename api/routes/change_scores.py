@@ -92,7 +92,7 @@ async def get_stats(db: AsyncSession = Depends(get_db_session)):
             "total_change_scores": total_scores,
             "flagged":            flagged,
             "agencies":           agencies,
-            "seeding_complete":   total_regs >= 100,
+            "seeding_complete":   total_regs >= 500,
         }
     except Exception as exc:
         return {"total_regulations": 0, "flagged": 0, "agencies": 0,

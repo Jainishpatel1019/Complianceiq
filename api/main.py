@@ -70,13 +70,13 @@ async def _auto_seed_if_empty() -> None:
             row = await conn.execute(sqla_text("SELECT COUNT(*) FROM regulations"))
             count = row.scalar() or 0
 
-        if count >= 100:
-            log.info("auto_seed_skip", existing=count, reason="already>=100")
+        if count >= 500:
+            log.info("auto_seed_skip", existing=count, reason="already>=500")
             return
 
-        log.info("auto_seed_start", existing=count, reason="below 100 — running seed")
+        log.info("auto_seed_start", existing=count, reason="below 500 — running seed")
         async with async_session() as session:
-            inserted = await seed_db(session, target=100)
+            inserted = await seed_db(session, target=500)
         log.info("auto_seed_complete", inserted=inserted)
 
     except Exception as exc:
