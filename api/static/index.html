@@ -937,16 +937,56 @@ function drawAnalyticsCharts() {
   drawTop10Chart('chart-top10',_allRegs,400,260)
 }
 
+// ═══════════════════════════════════════════════ MANUAL SEED TRIGGER
+async function triggerManualSeed() {
+  const btn = document.getElementById('seed-now-btn')
+  if(btn){ btn.disabled=true; btn.textContent='⏳ Seeding…' }
+  toast('Starting database seed — this takes ~30 seconds…','info')
+  try {
+    // Trigger the refresh endpoint with offline source to force seed
+    await fetch('/api/v1/refresh',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({lookback_days:90,source:'offline'})})
+    // Poll until data appears
+    const poll = setInterval(async()=>{
+      const ok = await initLoad()
+      if(ok){
+        clearInterval(poll)
+        document.getElementById('empty-state')?.remove()
+        toast('Database seeded successfully!','success')
+      }
+    },3000)
+    // Give up after 2 min
+    setTimeout(()=>clearInterval(poll),120000)
+  } catch(e) {
+    if(btn){ btn.disabled=false; btn.textContent='🌱 Seed Now' }
+    toast('Seed request failed','error')
+  }
+}
+
+function showEmptyState() {
+  const container = document.getElementById('dash-top-cards')
+  if(!container) return
+  container.innerHTML = `<div class="seeding-card" id="empty-state">
+    <div class="seeding-icon">🌱</div>
+    <div class="seeding-title">Database is empty</div>
+    <div class="seeding-sub" style="margin-bottom:16px">The auto-seed should start within 10 seconds of startup.<br/>If it's been longer, click below to trigger it manually.</div>
+    <button id="seed-now-btn" onclick="triggerManualSeed()" style="background:var(--blue);color:#fff;border:none;border-radius:8px;padding:10px 24px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">🌱 Seed Database Now</button>
+    <div style="margin-top:10px;font-size:11px;color:var(--text3)">Generates 3,250+ regulations offline — no internet required</div>
+  </div>`
+}
+
 // ═══════════════════════════════════════════════ INIT
 ;(async()=>{
   pollStats()
   _statsPoll = setInterval(pollStats,8000)
   const ok = await initLoad()
   if(!ok) {
-    // retry every 15s until data appears
+    // Show empty state with manual seed button after 30s
+    let emptyShown = false
     const retry = setInterval(async()=>{
-      if(await initLoad()) clearInterval(retry)
-    },15000)
+      if(await initLoad()){ clearInterval(retry); return }
+      if(!emptyShown){ emptyShown=true; showEmptyState() }
+    },8000)
+    setTimeout(()=>{ if(!emptyShown){ emptyShown=true; showEmptyState() } },30000)
   }
 })()
 </script>

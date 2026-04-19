@@ -12,6 +12,7 @@ Why FastAPI over Flask/Django:
 
 from __future__ import annotations
 
+import asyncio
 import logging
 import os
 from contextlib import asynccontextmanager
@@ -23,7 +24,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import RedirectResponse
 from fastapi.staticfiles import StaticFiles
 
-from api.routes import regulations, reports, health, change_scores, causal, graph
+from api.routes import regulations, reports, health, change_scores, causal, graph, refresh
 from api.websockets import router as ws_router
 
 # ── Structured logging setup ─────────────────────────────────────────────────
@@ -43,6 +44,49 @@ structlog.configure(
 log = structlog.get_logger()
 
 
+async def _auto_seed_if_empty() -> None:
+    """Self-healing seed: if the DB is empty, run the offline generator.
+
+    Runs as a background asyncio task 5 seconds after startup.
+    Independent of start.sh so it works even if the shell seed fails.
+    The offline generator has zero network calls and completes in ~30s.
+    """
+    await asyncio.sleep(5)   # let uvicorn fully initialise first
+    try:
+        from sqlalchemy import text as sqla_text
+        from db import get_engine
+        engine = get_engine()
+        async with engine.connect() as conn:
+            row = await conn.execute(sqla_text("SELECT COUNT(*) FROM regulations"))
+            count = row.scalar() or 0
+        if count > 0:
+            log.info("auto_seed_skip", existing=count)
+            return
+        log.info("auto_seed_start", reason="DB is empty — running offline generator")
+        # Run the offline bulk seed in a thread so it doesn't block the event loop
+        loop = asyncio.get_event_loop()
+        await loop.run_in_executor(None, _run_offline_seed)
+        log.info("auto_seed_complete")
+    except Exception as exc:
+        log.error("auto_seed_failed", error=str(exc))
+
+
+def _run_offline_seed() -> None:
+    """Synchronous wrapper — called from a thread executor."""
+    import sys, os
+    # Ensure the project root is on sys.path
+    root = os.path.join(os.path.dirname(__file__), "..")
+    if root not in sys.path:
+        sys.path.insert(0, root)
+    try:
+        from backend.pipelines.seed_bulk import main as seed_main
+        seed_main(target=3300)
+    except Exception as exc:
+        # Log but don't crash — the API should still serve even if seeding fails
+        import logging
+        logging.getLogger(__name__).error(f"_run_offline_seed failed: {exc}")
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     """Startup and shutdown logic for the FastAPI app.
@@ -57,6 +101,9 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     async with engine.connect() as conn:
         await conn.execute(__import__("sqlalchemy").text("SELECT 1"))
     log.info("Database connection verified")
+
+    # Self-healing: seed the DB if it's empty (catches start.sh seed failures)
+    asyncio.create_task(_auto_seed_if_empty())
 
     yield
 
@@ -104,6 +151,7 @@ app.include_router(change_scores.router, prefix="/api/v1/change-scores", tags=["
 app.include_router(causal.router, prefix="/api/v1/causal", tags=["causal"])
 app.include_router(graph.router,  prefix="/api/v1/graph",  tags=["graph"])
 app.include_router(ws_router, prefix="/ws", tags=["websockets"])
+app.include_router(refresh.router, prefix="/api/v1/refresh", tags=["refresh"])
 
 # ── Static files ──────────────────────────────────────────────────────────────
 # 1. Landing page dashboard (api/static/) — always present in the image
