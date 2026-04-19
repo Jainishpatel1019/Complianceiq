@@ -20,7 +20,7 @@ The project came out of a real problem: US regulators publish around 40 rule upd
 
 | | |
 |---|---|
-| ![Dashboard](docs/screenshots/Dashboard.png) | ![Regulation Feed](docs/screenshots/Regulation-feed.png) |
+| ![Dashboard](docs/screenshots/Dashboard.png) | ![Regulation Feed](docs/screenshots/Regulation Feed.png) |
 | ![Analytics](docs/screenshots/Analytics.png) | ![Alerts](docs/screenshots/Alerts.png) |
 
 ---
