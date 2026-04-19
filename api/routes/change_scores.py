@@ -66,6 +66,31 @@ class RegulationHeatmap(BaseModel):
 
 # ── Routes ────────────────────────────────────────────────────────────────────
 
+@router.get("/stats", include_in_schema=True)
+async def get_stats(db: AsyncSession = Depends(get_db_session)) -> dict:
+    """Return quick summary stats — total regulations, flagged count, agencies.
+
+    Used by the landing page to poll dataset size while bulk seeding runs
+    in the background (count grows from 10 → 10,000 over a few minutes).
+    """
+    total_regs  = await db.scalar(select(func.count()).select_from(Regulation))
+    total_scores = await db.scalar(select(func.count()).select_from(ChangeScore))
+    flagged     = await db.scalar(
+        select(func.count()).select_from(ChangeScore)
+        .where(ChangeScore.flagged_for_analysis == True)
+    )
+    agencies    = await db.scalar(
+        select(func.count(func.distinct(Regulation.agency))).select_from(Regulation)
+    )
+    return {
+        "total_regulations": total_regs or 0,
+        "total_change_scores": total_scores or 0,
+        "flagged": flagged or 0,
+        "agencies": agencies or 0,
+        "seeding_complete": (total_regs or 0) >= 500,
+    }
+
+
 @router.get("", response_model=list[ChangeScoreFull])
 async def list_change_scores(
     limit: int = Query(default=50, ge=1, le=1000),

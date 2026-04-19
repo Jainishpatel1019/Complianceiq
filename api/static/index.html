@@ -214,7 +214,7 @@
 <!-- STATS BAR -->
 <div class="stats-bar">
   <div class="stat-item">
-    <div class="stat-num blue" id="stat-total">10</div>
+    <div class="stat-num blue" id="stat-total">—</div>
     <div class="stat-label">Regulations Tracked</div>
   </div>
   <div class="stat-item">
@@ -760,7 +760,31 @@ function closeModalBtn() {
 }
 document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModalBtn() })
 
+// ── LIVE STATS POLLING ────────────────────────────────────────────────────────
+// Polls /api/v1/change-scores/stats every 8s while the bulk seed is running
+// in the background. Once seeding_complete=true, polling stops.
+let _statsPollTimer = null
+
+async function pollStats() {
+  try {
+    const r = await fetch('/api/v1/change-scores/stats')
+    const s = await r.json()
+    document.getElementById('stat-total').textContent   = s.total_regulations.toLocaleString()
+    document.getElementById('stat-flagged').textContent = s.flagged.toLocaleString()
+
+    if (!s.seeding_complete) {
+      // Show a subtle "seeding…" indicator on the total
+      document.getElementById('stat-total').title = 'Seeding in progress — count growing…'
+    } else {
+      clearInterval(_statsPollTimer)
+      document.getElementById('stat-total').title = ''
+    }
+  } catch(e) { /* ignore — will retry */ }
+}
+
 // ── INIT ──────────────────────────────────────────────────────────────────────
+pollStats()
+_statsPollTimer = setInterval(pollStats, 8000)
 loadDbCards()
 </script>
 </body>

@@ -42,8 +42,16 @@ echo "==> Seeding database with core 10 regulations (idempotent)..."
 CHROMADB_HOST=localhost CHROMADB_PORT=8001 \
     python -m backend.pipelines.seed
 
-echo "==> Bulk-seeding ~500 real regulations from Federal Register (idempotent)..."
-python -m backend.pipelines.seed_bulk || echo "    Bulk seed skipped (no network / already seeded)"
+echo "==> Launching bulk seed in background (10,000 real FR regulations 2015→now)..."
+# Run in background so uvicorn starts immediately — users see data appearing
+# within ~2 min rather than waiting for the full seed before the app is live.
+(
+    sleep 10  # let the API fully start first
+    python -m backend.pipelines.seed_bulk --target 10000 \
+        >> /tmp/seed_bulk.log 2>&1 \
+        && echo "Bulk seed complete" >> /tmp/seed_bulk.log \
+        || echo "Bulk seed failed — check /tmp/seed_bulk.log"
+) &
 
 echo "==> Starting ComplianceIQ API on port 7860..."
 exec uvicorn api.main:app \
