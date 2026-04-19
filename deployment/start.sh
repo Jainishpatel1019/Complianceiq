@@ -38,9 +38,12 @@ for i in $(seq 1 30); do
     sleep 2
 done
 
-echo "==> Seeding database (idempotent)..."
+echo "==> Seeding database with core 10 regulations (idempotent)..."
 CHROMADB_HOST=localhost CHROMADB_PORT=8001 \
     python -m backend.pipelines.seed
+
+echo "==> Bulk-seeding ~500 real regulations from Federal Register (idempotent)..."
+python -m backend.pipelines.seed_bulk || echo "    Bulk seed skipped (no network / already seeded)"
 
 echo "==> Starting ComplianceIQ API on port 7860..."
 exec uvicorn api.main:app \

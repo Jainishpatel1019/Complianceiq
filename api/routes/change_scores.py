@@ -68,7 +68,7 @@ class RegulationHeatmap(BaseModel):
 
 @router.get("", response_model=list[ChangeScoreFull])
 async def list_change_scores(
-    limit: int = Query(default=50, ge=1, le=200),
+    limit: int = Query(default=50, ge=1, le=1000),
     flagged_only: bool = Query(default=False),
     min_drift: float = Query(default=0.0, ge=0.0, le=1.0),
     db: AsyncSession = Depends(get_db_session),

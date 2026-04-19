@@ -191,7 +191,7 @@
     <a href="#feed">Feed</a>
     <a href="#command">Analytics</a>
     <a href="#stack">Stack</a>
-    <a href="/api/v1/docs" target="_blank">API Docs</a>
+    <a href="/docs" target="_blank">API Docs ↗</a>
     <a href="/api/v1/change-scores?limit=5" target="_blank" style="background:var(--blue);color:#fff;padding:.4rem .9rem;border-radius:6px;font-weight:600;margin-left:.5rem;">
       Live API ↗
     </a>
@@ -207,7 +207,7 @@
     <button class="btn btn-primary" onclick="document.getElementById('feed').scrollIntoView({behavior:'smooth'})">
       View Regulation Feed
     </button>
-    <a href="/api/v1/docs" target="_blank" class="btn btn-secondary">Explore API Docs ↗</a>
+    <a href="/docs" target="_blank" class="btn btn-secondary">Explore API Docs ↗</a>
   </div>
 </div>
 
@@ -323,7 +323,7 @@
 <footer>
   <p style="margin-bottom:.5rem;">ComplianceIQ — Regulatory Intelligence Platform</p>
   <p>Built with LangChain · Ollama · ChromaDB · TimescaleDB · Airflow · FastAPI · React</p>
-  <p style="margin-top:.5rem;"><a href="/api/v1/docs">API Docs</a> · <a href="/api/v1/change-scores">Raw Data</a></p>
+  <p style="margin-top:.5rem;"><a href="/docs">API Docs</a> · <a href="/api/v1/change-scores">Raw Data</a></p>
 </footer>
 
 <!-- MODAL -->
@@ -510,13 +510,30 @@ function drawImpactChart(enrichment) {
 // ── RENDER DB CARDS ───────────────────────────────────────────────────────────
 async function loadDbCards() {
   try {
-    const resp = await fetch('/api/v1/change-scores?limit=50')
+    const resp = await fetch('/api/v1/change-scores?limit=1000')
     const scores = await resp.json()
 
     // Update stats bar
     document.getElementById('stat-total').textContent = scores.length
     const flagged = scores.filter(s => s.flagged_for_analysis).length
     document.getElementById('stat-flagged').textContent = flagged
+
+    // Recompute capital at risk from raw_metadata impact ranges
+    // Shown as $XT+ where X is rounded sum of mid-point estimates in $B
+    let totalImpactB = 0
+    for (const s of scores) {
+      const e = ENRICHMENT[s.document_number]
+      if (e) {
+        totalImpactB += (e.impact_low + e.impact_high) / 2
+      } else if (s.drift_score > 0.15) {
+        // Heuristic for bulk-seeded regs: $2B average for flagged
+        totalImpactB += 2
+      }
+    }
+    const impactLabel = totalImpactB >= 1000
+      ? `$${(totalImpactB/1000).toFixed(1)}T+`
+      : `$${Math.round(totalImpactB)}B+`
+    document.getElementById('stat-impact').textContent = impactLabel
 
     // Draw charts
     drawDriftChart(scores)
