@@ -18,22 +18,6 @@ The project came out of a real problem: US regulators publish around 40 rule upd
 
 ---
 
-## Screenshots
-
-### Dashboard
-![Dashboard](docs/screenshots/dashboard.png)
-
-### Regulation Feed
-![Regulation Feed](docs/screenshots/regulation-feed.png)
-
-### Analytics
-![Analytics](docs/screenshots/analytics.png)
-
-### Alerts
-![Alerts](docs/screenshots/alerts.png)
-
----
-
 ## What it does
 
 **Change detection** reads the text of each regulation version and computes three complementary scores: semantic drift (sentence embedding cosine distance), Jensen-Shannon divergence on token distributions, and Wasserstein distance on term frequency vectors. Each measure catches a different kind of change. Semantic drift catches rewording, JSD catches vocabulary shift, Wasserstein catches structural changes like reordering. Any regulation scoring above the calibrated 0.15 drift threshold gets flagged for the agent pipeline.
