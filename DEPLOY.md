@@ -40,10 +40,10 @@ In your Space → **Settings → Repository secrets**, add these exactly:
 
 | Secret name | Value |
 |---|---|
-| `POSTGRES_USER` | `complianceiq` |
-| `POSTGRES_PASSWORD` | `WQu0agrxFuhiJItgjYHMA9ssMnlCDO1g` |
-| `POSTGRES_DB` | `complianceiq` |
-| `API_SECRET_KEY` | `ec62be17232cdaa3f430bb5ec7743bae41df5da2a6b27537fed265d213d81b46` |
+| `POSTGRES_USER` | `YOUR_POSTGRES_USERNAME_HERE` |
+| `POSTGRES_PASSWORD` | `YOUR_POSTGRES_PASSWORD_HERE` |
+| `POSTGRES_DB` | `YOUR_POSTGRES_DB_HERE` |
+| `API_SECRET_KEY` | `YOUR_API_KEY_HERE` |
 
 > These secrets are only for the HF Space. Your local `.env` already has them.
 
